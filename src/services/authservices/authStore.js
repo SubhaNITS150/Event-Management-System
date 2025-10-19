@@ -6,8 +6,12 @@ export const useAuthStore = create((set) => ({
   loading: true,
 
   init: async () => {
-    const { data : { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    console.log(session);
+
     set({ user: session?.user ?? null, loading: false });
 
     supabase.auth.onAuthStateChange((_event, session) => {

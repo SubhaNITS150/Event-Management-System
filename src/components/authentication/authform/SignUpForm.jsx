@@ -29,7 +29,7 @@ const SignUpForm = () => {
     } else {
       toast.success("Sign up Successful");
       await init();
-      setTimeout(() => navigate("/"), 2000);
+      setTimeout()
     }
   };
 
