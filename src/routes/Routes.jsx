@@ -1,6 +1,6 @@
 import React from 'react'
-import { Route, Router, Routes } from 'react-router-dom'
-import SignUpPage from '../pages/authentication/signup'
+import { Route, Routes } from 'react-router-dom'
+import SignUpPage from "../pages/authentication/signup.jsx"
 import HomePage from '../pages/homepage/HomePage'
 
 const AppRouter = () => {

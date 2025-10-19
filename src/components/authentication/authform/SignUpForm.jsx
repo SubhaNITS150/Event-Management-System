@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { supabase } from "../../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient.js";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../../services/authservices/authStore";
+import { useAuthStore } from "../../../services/authservices/authStore.js";
 
 const SignUpForm = () => {
   const navigate = useNavigate();

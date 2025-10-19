@@ -1,6 +1,6 @@
 import React from 'react'
-import GoogleSignInButton from '../google/GoogleSignInButton'
-import GithubSignInButton from '../github/GithubSignInButton'
+import GoogleSignInButton from '../google/GoogleSignInButton.jsx'
+import GithubSignInButton from '../github/GithubSignInButton.jsx'
 
 
 const AuthForm = () => {

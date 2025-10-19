@@ -1,5 +1,5 @@
 import React from 'react'
-import { useAuthStore } from '../../services/authservices/authStore'
+import { useAuthStore } from '../../services/authservices/authStore.js'
 
 const Hero = () => {
 
