@@ -7,6 +7,7 @@ import { useAuthStore } from "../../../services/authservices/authStore.js";
 const SignUpForm = () => {
   const navigate = useNavigate();
   const { init } = useAuthStore();
+  const { setAuthenticated } = useAuthStore();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,7 +30,8 @@ const SignUpForm = () => {
     } else {
       toast.success("Sign up Successful");
       await init();
-      setTimeout()
+      // setAuthenticated(true);
+      setTimeout(() => navigate("/"), 2000);
     }
   };
 
