@@ -9,12 +9,13 @@ import FooterMobile from "../components/footer/FooterMobile.jsx";
 import FooterDesktop from "../components/footer/FooterDesktop.jsx";
 import EventPage from "../pages/event/EventPage.jsx";
 import ProtectedRoute from "./ProtectedRoutes.jsx";
+import Login from "../pages/authentication/Login.jsx";
 
 const AppRouter = () => {
   const location = useLocation();
   const isMobile = useViewport();
 
-  const hideNavbar = location.pathname === "/signup";
+  const hideNavbar = location.pathname === "/signup" || location.pathname === "/login";
 
   return (
     <>
@@ -27,6 +28,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         } /> 
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
       {!hideNavbar && (isMobile ? <FooterMobile /> : <FooterDesktop />)}
     </>
