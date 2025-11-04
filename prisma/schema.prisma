@@ -13,3 +13,175 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// USERS table
+model User {
+  user_id String @id @default(cuid())
+  email   String @unique 
+  name    String
+  phone   String? 
+
+  team_members TeamMember[] 
+  certificates Certificate[] 
+
+  @@map("users") 
+}
+
+// TEAM table
+model Team {
+  team_id           String   @id @default(cuid())
+  team_name         String   @unique 
+  registration_date DateTime @default(now())
+
+  prize        Prize?         
+  team_members TeamMember[]   
+  results      Result[]       
+  submissions  Submission[]   
+
+  @@map("teams")
+}
+
+// TEAMMEMBERS (Join Table for User and Team)
+model TeamMember {
+  team_id String
+  user_id String
+  role    String 
+
+  team Team @relation(fields: [team_id], references: [team_id])
+  user User @relation(fields: [user_id], references: [user_id])
+
+  @@id([team_id, user_id]) 
+  @@map("team_members")
+}
+
+// PRIZES table
+model Prize {
+  prize_id     String @id @default(cuid())
+  team_id      String @unique 
+  team_position     String 
+  prize_amount Int
+
+  team Team @relation(fields: [team_id], references: [team_id])
+
+  @@map("prizes")
+}
+
+// ROUNDS table
+model Round {
+  round_id      String   @id @default(cuid())
+  round_number  Int
+  round_name    String 
+  start_date    DateTime
+
+  results   Result[]  
+  questions Question[] 
+
+  @@map("rounds")
+}
+
+// RESULTS (Join Table for Team and Round)
+model Result {
+  result_id   String @id @default(cuid())
+  team_id     String
+  round_id    String
+  total_score Int
+
+  team  Team  @relation(fields: [team_id], references: [team_id])
+  round Round @relation(fields: [round_id], references: [round_id])
+
+  @@unique([team_id, round_id]) 
+  @@map("results")
+}
+
+// QUESTIONS table
+model Question {
+  question_id   String @id @default(cuid())
+  round_id      String
+  question_text String 
+
+  round          Round           @relation(fields: [round_id], references: [round_id])
+  mcq_options    McqOption[]     
+  coding_problem CodingProblem?  
+  submissions    Submission[]    
+
+  @@map("questions")
+}
+
+// MCQOPTIONS table
+model McqOption {
+  option_id   String  @id @default(cuid())
+  question_id String
+  option_text String
+  is_correct  Boolean
+
+  question Question @relation(fields: [question_id], references: [question_id])
+
+  @@map("mcq_options")
+}
+
+// CODINGPROBLEMS table
+model CodingProblem {
+  problem_id        String @id @default(cuid())
+  question_id       String @unique 
+  problem_statement String
+
+  question Question   @relation(fields: [question_id], references: [question_id])
+  testcases TestCase[] 
+
+  @@map("coding_problems")
+}
+
+// TESTCASES table
+model TestCase {
+  testcase_id     String @id @default(cuid())
+  problem_id      String
+  input_data      String
+  expected_output String
+
+
+  problem CodingProblem @relation(fields: [problem_id], references: [problem_id])
+
+  @@map("testcases")
+}
+
+// SUBMISSIONS (Join Table for Team and Question)
+model Submission {
+  submission_id String   @id @default(cuid())
+  team_id       String
+  question_id   String
+  answer_text   String? 
+  submitted_at  DateTime @default(now())
+
+  team     Team     @relation(fields: [team_id], references: [team_id])
+  question Question @relation(fields: [question_id], references: [question_id])
+
+  evaluations Evaluation[] 
+
+  @@unique([team_id, question_id]) 
+  @@map("submissions")
+}
+
+// EVALUATIONS table
+model Evaluation {
+  evaluation_id   String @id @default(cuid())
+  submission_id String
+  marks_obtained Int
+  status         String 
+
+  submission Submission @relation(fields: [submission_id], references: [submission_id])
+
+  @@map("evaluations")
+}
+
+// CERTIFICATES table
+model Certificate {
+  certificate_id   String   @id @default(cuid())
+  user_id          String
+  certificate_type String 
+  issue_date       DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [user_id])
+
+  @@map("certificates")
+}
+
