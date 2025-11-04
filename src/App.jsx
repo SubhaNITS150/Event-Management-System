@@ -14,6 +14,7 @@ import Certificates from "./pages/Certificates";
 import ParticipantDashboard from "./pages/ParticipantDashboard";
 import Round1 from "./pages/Round1";
 import Round2 from "./pages/Round2";
+import Register from "./pages/Register";
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
         <Route path="/participant/dashboard" element={<ParticipantDashboard />} />
         <Route path="/round1" element={<Round1 />} />
         <Route path="/round2" element={<Round2 />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
 
       {/* ✅ This enables toast notifications globally */}
