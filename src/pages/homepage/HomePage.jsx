@@ -1,10 +1,11 @@
 import React from 'react'
-import Hero from '../../components/homepage/Hero'
+import HeroSection from '../../components/homepage/Hero'
+
 
 const HomePage = () => {
   return (
     <div>
-      <Hero />
+      <HeroSection />
     </div>
   )
 }
