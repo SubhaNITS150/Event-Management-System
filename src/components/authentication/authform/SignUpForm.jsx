@@ -12,6 +12,7 @@ const SignUpForm = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +24,26 @@ const SignUpForm = () => {
         data: { name },
       },
     });
+
+    const user = data?.user;
+
+    if (user) {
+      const { data, error } = await supabase.from('users').insert([
+        {
+          user_id: user.id,
+          email: user.email,
+          name: name,
+          phone: phone || null,
+        },
+      ]);
+
+      if (error) {
+        toast.error("Error saving user to database");
+        console.error(error);
+      } else {
+        toast.success("User registered successfully! ");
+      }
+    }
 
     if (error) {
       console.log(error);
