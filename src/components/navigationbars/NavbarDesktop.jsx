@@ -29,7 +29,9 @@ export default function NavbarDesktop() {
     try {
       setLoggingOut(true);
       await supabase.auth.signOut();
-      useAuthStore.getState().logout?.();
+      
+      useAuthStore.getState().signOut?.();
+
       window.location.href = "/login";
     } catch (e) {
       console.error(e);
@@ -79,16 +81,7 @@ export default function NavbarDesktop() {
             <div className="hidden md:flex items-center gap-2">
               {user ? (
                 <>
-                  {/* <Link to="/dashboard">
-                    <Button className="bg-[#FF7A00] hover:bg-[#e86b00] text-white border border-[#FF7A00] transition-colors">
-                      Dashboard
-                    </Button>
-                  </Link> */}
-{/* <Link to={user?.role === "admin" ? "/admin" : "/dashboard"}>
-     <Button className="bg-[#FF7A00] hover:bg-[#e86b00] text-white border border-[#FF7A00] transition-colors">
-    Dashboard                  
-    </Button>
-      </Link> */}
+                  
                      <Link to={user?.user_metadata?.role === "admin" ? "/admin" : "/dashboard"}>
          <Button className="bg-[#FF7A00] hover:bg-[#e86b00] text-white border border-[#FF7A00] transition-colors">
         Dashboard

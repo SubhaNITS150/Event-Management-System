@@ -11,7 +11,7 @@ import EventPage from "../pages/event/EventPage.jsx";
 import ProtectedRoute from "./ProtectedRoutes.jsx";
 import Login from "../pages/authentication/Login.jsx";
 import AdminDashboard from "../pages/AdminDashboard.jsx";
-import ParticipantDashboard from "../pages/participantDashboard.jsx";
+import ParticipantDashboard from "../pages/ParticipantDashboard.jsx";
 import Register from "../pages/Register.jsx";
 import About from "../pages/About.jsx";
 import Schedule from "../pages/Schedule.jsx";

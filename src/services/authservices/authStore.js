@@ -32,9 +32,9 @@ export const useAuthStore = create((set) => ({
       });
     });
 
-    setAuthenticated: (status) => set({ isAuthenticated: status })
+    
   },
-
+     setAuthenticated: (status) => set({ isAuthenticated: status }),
   signOut: async () => {
     await supabase.auth.signOut();
     set({ user: null, isAuthenticated: false });
