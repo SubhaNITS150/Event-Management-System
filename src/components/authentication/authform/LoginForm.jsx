@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import toast from "react-hot-toast";
@@ -144,7 +143,11 @@ const LoginForm = () => {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               aria-label={showPw ? "Hide password" : "Show password"}
             >
-              {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {showPw ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -162,7 +165,6 @@ const LoginForm = () => {
           <span className="text-sm text-gray-500">or</span>
           <div className="h-px bg-gray-300 flex-1" />
         </div>
-         
 
         {/* OAuth buttons */}
         <div className="flex flex-col gap-3">
@@ -195,16 +197,15 @@ const LoginForm = () => {
           </button>
         </div>
         <div className="text-center mt-1">
-  <button
-    type="button"
-    onClick={() => navigate("/signUp")}
-    className="text-sm text-[#00205B] hover:underline font-medium"
-  >
-    Don’t have an account? Sign Up
-  </button>
-</div>
+          <button
+            type="button"
+            onClick={() => navigate("/signUp")}
+            className="text-sm text-[#00205B] hover:underline font-medium"
+          >
+            Don’t have an account? Sign Up
+          </button>
+        </div>
       </form>
-      
     </div>
   );
 };

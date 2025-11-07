@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "../components/navigationbars/NavbarDesktop";
 import Footer from "../components/footer/FooterDesktop";
@@ -8,6 +7,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Plus, Trash2, IndianRupee } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Register() {
   const { toast } = useToast();
@@ -20,7 +20,14 @@ export default function Register() {
     if (members.length < 3) {
       setMembers([
         ...members,
-        { id: Date.now(), name: "", email: "", college: "", phone: "", aadhar: "" },
+        {
+          id: Date.now(),
+          name: "",
+          email: "",
+          college: "",
+          phone: "",
+          aadhar: "",
+        },
       ]);
     }
   };
@@ -32,22 +39,114 @@ export default function Register() {
   };
 
   const updateMember = (id, field, value) => {
-    setMembers(members.map((m) => (m.id === id ? { ...m, [field]: value } : m)));
+    setMembers(
+      members.map((m) => (m.id === id ? { ...m, [field]: value } : m))
+    );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Registration submitted", { teamName, members });
-    toast({
-      title: "Registration Submitted!",
-      description:
-        "Your team has been registered successfully. Check your email for confirmation.",
-    });
+
+    try {
+      // ✅ 1. Get current logged-in user (leader)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Please sign in first", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // ✅ 2. Check if team name already exists
+      const { data: existingTeam, error: teamCheckErr } = await supabase
+        .from("teams")
+        .select("team_name")
+        .eq("team_name", teamName)
+        .maybeSingle();
+
+      if (teamCheckErr) throw teamCheckErr;
+      if (existingTeam) {
+        toast({
+          title: "Team name already exists",
+          description: "Please choose a different name.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // ✅ 3. Fetch all users from Supabase `users` table to get their IDs
+      const { data: users, error: usersErr } = await supabase
+        .from("users")
+        .select("user_id, email");
+
+      if (usersErr) throw usersErr;
+
+      // Map entered member emails to existing user IDs
+      const memberRecords = members.map((m) => {
+        const found = users.find((u) => u.email === m.email);
+        if (!found) {
+          throw new Error(`User with email ${m.email} is not registered.`);
+        }
+        return {
+          user_id: found.user_id,
+          college: m.college,
+          aadhar: m.aadhar,
+          role: m.email === user.email ? "leader" : "user",
+        };
+      });
+
+      // ✅ 4. Insert new team record
+      const { data: teamData, error: insertTeamErr } = await supabase
+        .from("teams")
+        .insert([{ team_name: teamName }])
+        .select("team_id")
+        .single();
+
+      if (insertTeamErr) throw insertTeamErr;
+      const team_id = teamData.team_id;
+
+      // ✅ 5. Insert team members
+      const { error: teamMembersErr } = await supabase
+        .from("team_members")
+        .insert(
+          memberRecords.map((m) => ({
+            team_id,
+            user_id: m.user_id,
+            college: m.college,
+            aadhar: m.aadhar,
+            role: m.role,
+          }))
+        );
+
+      if (teamMembersErr) throw teamMembersErr;
+
+      // ✅ 6. Success toast
+      toast({
+        title: "Team Registered Successfully!",
+        description: "Your team has been registered. Proceed to payment.",
+      });
+
+      // Reset form
+      setTeamName("");
+      setMembers([
+        { id: 1, name: "", email: "", college: "", phone: "", aadhar: "" },
+      ]);
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      
       <main className="flex-1 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -234,13 +333,13 @@ export default function Register() {
               type="submit"
               size="lg"
               className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg rounded-xl shadow-md"
+              onClick={handleSubmit}
             >
               Proceed to Payment
             </Button>
           </form>
         </div>
       </main>
-     
     </div>
   );
 }
