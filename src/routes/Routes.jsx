@@ -52,31 +52,11 @@ const AppRouter = () => {
             < Register/>            
           </ProtectedRoute>
         } /> 
-         <Route path="/about" element={
-          <ProtectedRoute>
-            < About/>            
-          </ProtectedRoute>
-        } /> 
-         <Route path="/schedule" element={
-          <ProtectedRoute>
-            < Schedule/>            
-          </ProtectedRoute>
-        } /> 
-         <Route path="/leaderboard" element={
-          <ProtectedRoute>
-            < Leaderboard/>            
-          </ProtectedRoute>
-        } /> 
-        <Route path="/gallery" element={
-          <ProtectedRoute>
-            < Gallery/>            
-          </ProtectedRoute>
-        } /> 
-        <Route path="/contact" element={
-          <ProtectedRoute>
-            < Contact/>            
-          </ProtectedRoute>
-        } /> 
+        
+         
+         
+       
+       
          <Route path="/certificates" element={
           <ProtectedRoute>
             < Certificates/>            
@@ -94,7 +74,33 @@ const AppRouter = () => {
         } /> 
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<Login />} />
+         <Route path="/about" element={
+          
+            < About/>            
+          
+        } /> 
+           <Route path="/schedule" element={
+          
+            < Schedule/>            
+          
+        } /> 
+
+           <Route path="/leaderboard" element={
+          
+            < Leaderboard/>            
+          
+        } /> 
+           <Route path="/gallery" element={
         
+            < Gallery/>            
+          
+        } /> 
+           <Route path="/contact" element={
+         
+            < Contact/>            
+         
+        } /> 
+
       </Routes>
       {!hideNavbar && (isMobile ? <FooterMobile /> : <FooterDesktop />)}
     </>
