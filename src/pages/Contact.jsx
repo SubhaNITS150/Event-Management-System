@@ -1,8 +1,7 @@
 
 
 import { useState } from "react";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -62,7 +61,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFB]">
-      <Navbar />
+      
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -209,7 +208,7 @@ export default function Contact() {
           </Card>
         </div>
       </main>
-      <Footer />
+     
     </div>
   );
 }

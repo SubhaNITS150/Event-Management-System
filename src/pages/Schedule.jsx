@@ -1,11 +1,10 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+
 import TimelineSection from "../components/TimelineSection";
 
 export default function Schedule() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -19,7 +18,7 @@ export default function Schedule() {
           <TimelineSection />
         </div>
       </main>
-      <Footer />
+      
     </div>
   );
 }

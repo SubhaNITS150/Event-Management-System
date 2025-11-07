@@ -1,59 +1,10 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Download, Award, Star, Trophy } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import jsPDF from "jspdf"; 
-// const handleDownload = (type) => {
-//   console.log(`Downloading ${type} certificate`);
 
-//   // Create new PDF
-//   const doc = new jsPDF();
-
-//   // Certificate design
-//   doc.setFont("helvetica", "bold");
-//   doc.setFontSize(22);
-//   doc.text("Certificate of Achievement", 105, 30, { align: "center" });
-
-//   doc.setFontSize(16);
-//   doc.setFont("helvetica", "normal");
-//   doc.text("This is to certify that", 105, 50, { align: "center" });
-
-//   doc.setFontSize(20);
-//   doc.setFont("helvetica", "bold");
-//   doc.text("Code Warriors", 105, 65, { align: "center" });
-
-//   doc.setFontSize(14);
-//   doc.setFont("helvetica", "normal");
-//   doc.text("Team ID: HK2026-001", 105, 75, { align: "center" });
-
-//   doc.text(
-//     `has been awarded the "${type}" certificate`,
-//     105,
-//     90,
-//     { align: "center" }
-//   );
-
-//   doc.text(
-//     "for exceptional performance in Hackathon 2026.",
-//     105,
-//     100,
-//     { align: "center" }
-//   );
-
-//   doc.line(40, 130, 170, 130); // signature line
-//   doc.text("Event Coordinator - Dr. Rajesh Kumar", 105, 140, { align: "center" });
-
-//   // Save as file
-//   doc.save(`${type.replace(/\s+/g, "_")}_Certificate.pdf`);
-
-//   // Toast confirmation
-//   toast({
-//     title: "Certificate Downloaded",
-//     description: `Your ${type} certificate has been downloaded successfully.`,
-//   });
-// };
 const handleDownload = (type) => {
   console.log(`Downloading ${type} certificate`);
 
@@ -160,7 +111,7 @@ export default function Certificates() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      
 
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -240,7 +191,7 @@ export default function Certificates() {
         </div>
       </main>
 
-      <Footer />
+      
     </div>
   );
 }

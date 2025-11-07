@@ -1,6 +1,5 @@
 import { useState } from "react";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Clock, Send, FileText } from "lucide-react";
@@ -31,7 +30,7 @@ export default function Round2() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+     
       <main className="flex-1 py-8 bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
@@ -194,7 +193,7 @@ network.suggest_friends("Bob")
           </div>
         </div>
       </main>
-      <Footer />
+      
     </div>
   );
 }

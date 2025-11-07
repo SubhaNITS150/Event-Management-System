@@ -1,5 +1,4 @@
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+
 import { Card } from "../components/ui/card";
 import { Award, Users, TrendingUp, Star } from "lucide-react";
 import StatCard from "../components/StatCard";
@@ -15,7 +14,7 @@ export default function About() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      
       <main className="flex-1">
         
 
@@ -114,7 +113,7 @@ export default function About() {
           </div>
         </section>
       </main>
-      <Footer />
+     
     </div>
   );
 }

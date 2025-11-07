@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "../components/navigationbars/NavbarDesktop";
+import Footer from "../components/footer/FooterDesktop";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -85,7 +85,7 @@ const handleGenerateCertificates = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+     
      
       <main className="flex-1 py-12 bg-gray-50">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -254,7 +254,7 @@ const handleGenerateCertificates = () => {
    </div>
   </main>
 
-      <Footer />
+      
     </div>
   );
 }

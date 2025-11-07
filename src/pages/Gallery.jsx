@@ -1,6 +1,4 @@
 
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import patternImage from "../assets/images/Abstract_tech_pattern_background_e0cbe0d6.png";
@@ -28,7 +26,7 @@ export default function Gallery() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC]">
-      <Navbar />
+      
       <main className="flex-1 py-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Header */}
@@ -170,7 +168,7 @@ export default function Gallery() {
           </section>
         </div>
       </main>
-      <Footer />
+     
     </div>
   );
 }

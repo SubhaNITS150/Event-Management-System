@@ -1,167 +1,6 @@
-// import Navbar from "../components/Navbar";
-// import Footer from "../components/Footer";
-// import { Card } from "../components/ui/card";
-// import { Button } from "../components/ui/button";
-// import { Badge } from "../components/ui/badge";
-// import { CheckCircle2, Clock, Trophy, Users, FileText, Award } from "lucide-react";
-// import { Link } from "react-router-dom";
-// import { Progress } from "../components/ui/progress";
 
-// export default function ParticipantDashboard() {
-//   //todo: remove mock functionality
-//   const teamData = {
-//     name: "Code Warriors",
-//     id: "HK2026-001",
-//     members: ["John Doe", "Jane Smith", "Bob Johnson"],
-//     registrationStatus: "confirmed",
-//     qualified: ["Round 1"],
-//   };
-
-//   const upcomingTasks = [
-//     { title: "Round 2: Problem Solving", date: "Mar 16, 2026", time: "10:00 AM", status: "upcoming" },
-//   ];
-
-//   return (
-//     <div className="min-h-screen flex flex-col">
-//       <Navbar />
-//       <main className="flex-1 py-12 bg-card">
-//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//           <div className="mb-8">
-//             <h1 className="font-[Poppins] font-bold text-4xl mb-2">Participant Dashboard</h1>
-//             <p className="text-muted-foreground">Welcome back! Here's your team status</p>
-//           </div>
-
-//           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-//             <Card className="p-6 lg:col-span-2">
-//               <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
-//                 <div>
-//                   <h2 className="font-[Poppins] font-semibold text-2xl mb-1" data-testid="text-team-name">
-//                     {teamData.name}
-//                   </h2>
-//                   <p className="text-muted-foreground font-mono text-sm" data-testid="text-team-id">
-//                     Team ID: {teamData.id}
-//                   </p>
-//                 </div>
-//                 <Badge className="bg-chart-4 text-white" data-testid="badge-status">
-//                   <CheckCircle2 className="h-3 w-3 mr-1" />
-//                   {teamData.registrationStatus}
-//                 </Badge>
-//               </div>
-
-//               <div className="space-y-4">
-//                 <div>
-//                   <h3 className="font-semibold mb-3 flex items-center gap-2">
-//                     <Users className="h-5 w-5" />
-//                     Team Members
-//                   </h3>
-//                   <div className="space-y-2">
-//                     {teamData.members.map((member, index) => (
-//                       <div key={index} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg" data-testid={`member-${index}`}>
-//                         <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-//                           {member.split(" ").map(n => n[0]).join("")}
-//                         </div>
-//                         <span>{member}</span>
-//                       </div>
-//                     ))}
-//                   </div>
-//                 </div>
-
-//                 <div>
-//                   <h3 className="font-semibold mb-3 flex items-center gap-2">
-//                     <Trophy className="h-5 w-5 text-chart-3" />
-//                     Qualification Status
-//                   </h3>
-//                   <div className="space-y-2">
-//                     <div className="flex items-center justify-between p-3 bg-chart-4/10 rounded-lg border-l-4 border-chart-4">
-//                       <span>Round 1</span>
-//                       <Badge className="bg-chart-4 text-white">Qualified</Badge>
-//                     </div>
-//                     <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-//                       <span>Round 2</span>
-//                       <Badge variant="secondary">Pending</Badge>
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
-//             </Card>
-
-//             <div className="space-y-6">
-//               <Card className="p-6">
-//                 <h3 className="font-[Poppins] font-semibold text-xl mb-4 flex items-center gap-2">
-//                   <Clock className="h-5 w-5 text-chart-2" />
-//                   Upcoming Tasks
-//                 </h3>
-//                 <div className="space-y-3">
-//                   {upcomingTasks.map((task, index) => (
-//                     <div key={index} className="p-3 bg-secondary/50 rounded-lg" data-testid={`task-${index}`}>
-//                       <p className="font-medium mb-1">{task.title}</p>
-//                       <p className="text-sm text-muted-foreground">{task.date}</p>
-//                       <p className="text-sm text-muted-foreground">{task.time}</p>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </Card>
-
-//               <Card className="p-6">
-//                 <h3 className="font-[Poppins] font-semibold text-xl mb-4">Quick Actions</h3>
-//                 <div className="space-y-2">
-//                   <Link href="/leaderboard">
-//                     <Button variant="outline" className="w-full justify-start gap-2" data-testid="button-leaderboard">
-//                       <Trophy className="h-4 w-4" />
-//                       View Leaderboard
-//                     </Button>
-//                   </Link>
-//                   <Link href="/certificates">
-//                     <Button variant="outline" className="w-full justify-start gap-2" data-testid="button-certificates">
-//                       <Award className="h-4 w-4" />
-//                       Certificates
-//                     </Button>
-//                   </Link>
-//                   <Link href="/contact">
-//                     <Button variant="outline" className="w-full justify-start gap-2" data-testid="button-help">
-//                       <FileText className="h-4 w-4" />
-//                       Help & Support
-//                     </Button>
-//                   </Link>
-//                 </div>
-//               </Card>
-//             </div>
-//           </div>
-
-//           <Card className="p-6">
-//             <h3 className="font-[Poppins] font-semibold text-xl mb-4">Progress Overview</h3>
-//             <div className="space-y-4">
-//               <div>
-//                 <div className="flex justify-between mb-2">
-//                   <span className="text-sm font-medium">Overall Progress</span>
-//                   <span className="text-sm text-muted-foreground">50%</span>
-//                 </div>
-//                 <Progress value={50} className="h-2" />
-//               </div>
-//               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-//                 <div className="p-4 bg-secondary/50 rounded-lg">
-//                   <p className="text-sm text-muted-foreground mb-1">Round 1 Score</p>
-//                   <p className="text-2xl font-bold text-chart-4">85/100</p>
-//                 </div>
-//                 <div className="p-4 bg-secondary/50 rounded-lg">
-//                   <p className="text-sm text-muted-foreground mb-1">Current Rank</p>
-//                   <p className="text-2xl font-bold text-chart-2">#42</p>
-//                 </div>
-//                 <div className="p-4 bg-secondary/50 rounded-lg">
-//                   <p className="text-sm text-muted-foreground mb-1">Rounds Qualified</p>
-//                   <p className="text-2xl font-bold text-chart-3">1/2</p>
-//                 </div>
-//               </div>
-//             </div>
-//           </Card>
-//         </div>
-//       </main>
-//       <Footer />
-//     </div>
-//   );
-// }
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "../components/navigationbars/NavbarDesktop";
+import Footer from "../components/footer/FooterDesktop";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -185,7 +24,7 @@ export default function ParticipantDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+     {/* <Navbar /> */}
       <main className="flex-1 py-12">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="mb-8">
@@ -333,7 +172,7 @@ export default function ParticipantDashboard() {
           </Card>
         </div>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

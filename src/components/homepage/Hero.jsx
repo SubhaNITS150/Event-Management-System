@@ -1,8 +1,10 @@
+
+
+
 import { Calendar, Users, Trophy, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-
-// We'll use a placeholder image for the hero background
-// const heroImage = "https://placehold.co/1920x1080/0a0a0a/ffffff?text=Hackathon+Hero+Image";
+import heroImage from "../../assets/images/Hackathon_event_hero_image_11b34065.png";
+import { Button } from "../../components/ui/button";
 
 export default function HeroSection() {
   return (
@@ -10,7 +12,7 @@ export default function HeroSection() {
       {/* Background Image + Gradient Overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        // style={{ backgroundImage: `url(${heroImage})` }} // <-- Un-commented and using the placeholder
+        style={{ backgroundImage: `url(${heroImage})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-gray-900/90"></div>
       </div>
@@ -37,30 +39,29 @@ export default function HeroSection() {
             and win amazing prizes.
           </p>
 
-          {/* Buttons - Replaced with <button> elements inside the <Link> */}
+          {/* Buttons */}
           <div className="flex flex-wrap gap-4 mb-16">
             <Link to="/register">
-              {/* This is now a standard <button> */}
-              <button
-                type="button"
-                className="bg-orange-500 hover:bg-orange-600 text-white text-lg font-medium px-12 py-4 rounded-xl flex items-center gap-2 shadow-lg hover:shadow-orange-500/40 transition-all"
+              <Button
+                size="lg"
+                className="bg-orange-500 hover:bg-orange-600 text-white text-lg px-12 py-4 rounded-xl flex items-center gap-2 shadow-lg hover:shadow-orange-500/40 transition-all"
               >
                 Register Now <ArrowRight className="h-5 w-5" />
-              </button>
+              </Button>
             </Link>
 
             <Link to="/schedule">
-              {/* This is also a standard <button> */}
-              <button
-                type="button"
-                className="text-white border border-white/40 bg-white/10 backdrop-blur-md hover:bg-white/20 text-lg font-medium px-12 py-4 rounded-xl transition-all"
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-white border-white/40 bg-white/10 backdrop-blur-md hover:bg-white/20 text-lg px-12 py-4 rounded-xl transition-all"
               >
                 View Schedule
-              </button>
+              </Button>
             </Link>
           </div>
 
-          {/* Stats (No changes needed here) */}
+          {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[
               { icon: Calendar, label: "March 15–17, 2026" },
@@ -81,14 +82,15 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Bottom white fade (No changes needed here) */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-36 z-30 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.0) 100%)",
-        }}
-      />
+      {/* Bottom white fade (bigger height for smooth transition) */}
+<div
+  className="absolute bottom-0 left-0 right-0 h-36 z-30 pointer-events-none"
+  style={{
+    background:
+      "linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.0) 100%)",
+  }}
+/>
+
     </section>
   );
 }
