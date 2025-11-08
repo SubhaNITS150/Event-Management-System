@@ -18,7 +18,7 @@ export default function Leaderboard() {
 
   // TODO: remove mock functionality
   const leaderboardData = [
-    { rank: 1, teamId: "HK2026-002", teamName: "Tech Titans", round1: 92, round2: 88, total: 180 },
+    { rank: 1, teamId: "HK2026-002", teamName: "Meta Warriors", round1: 92, round2: 88, total: 180 },
     { rank: 2, teamId: "HK2026-015", teamName: "Code Masters", round1: 90, round2: 85, total: 175 },
     { rank: 3, teamId: "HK2026-007", teamName: "Algo Wizards", round1: 88, round2: 86, total: 174 },
     { rank: 4, teamId: "HK2026-001", teamName: "Code Warriors", round1: 85, round2: 82, total: 167 },

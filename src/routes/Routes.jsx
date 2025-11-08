@@ -21,86 +21,97 @@ import Contact from "../pages/Contact.jsx";
 import Certificates from "../pages/Certificates.jsx";
 import Round1 from "../pages/Round1.jsx";
 import Round2 from "../pages/Round2.jsx";
+import AlreadyRegistered from "../pages/AlreadyRegistered.jsx";
+import RegistrationGuard from "./RegistereGuard.jsx";
+
 const AppRouter = () => {
   const location = useLocation();
   const isMobile = useViewport();
 
-  const hideNavbar = location.pathname === "/signUp" || location.pathname === "/login";
+  const hideNavbar =
+    location.pathname === "/signUp" || location.pathname === "/login";
 
   return (
     <>
       {!hideNavbar && (isMobile ? <NavbarMobile /> : <NavbarDesktop />)}
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/event" element={
-          <ProtectedRoute>
-            <EventPage />            
-          </ProtectedRoute>
-        } /> 
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            < ParticipantDashboard/>            
-          </ProtectedRoute>
-        } /> 
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            < AdminDashboard/>            
-          </ProtectedRoute>
-        } /> 
-        <Route path="/register" element={
-          <ProtectedRoute>
-            < Register/>            
-          </ProtectedRoute>
-        } /> 
-        
-         
-         
-       
-       
-         <Route path="/certificates" element={
-          <ProtectedRoute>
-            < Certificates/>            
-          </ProtectedRoute>
-        } /> 
-         <Route path="/round1" element={
-          <ProtectedRoute>
-            < Round1/>            
-          </ProtectedRoute>
-        } /> 
-         <Route path="/round2" element={
-          <ProtectedRoute>
-            < Round2/>            
-          </ProtectedRoute>
-        } /> 
+        <Route
+          path="/event"
+          element={
+            <ProtectedRoute>
+              <EventPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <ParticipantDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <ProtectedRoute>
+              <RegistrationGuard>
+                <Register />
+              </RegistrationGuard>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/alreadyregistered"
+          element={
+            <ProtectedRoute>
+              <AlreadyRegistered />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/certificates"
+          element={
+            <ProtectedRoute>
+              <Certificates />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/round1"
+          element={
+            <ProtectedRoute>
+              <Round1 />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/round2"
+          element={
+            <ProtectedRoute>
+              <Round2 />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<Login />} />
-         <Route path="/about" element={
-          
-            < About/>            
-          
-        } /> 
-           <Route path="/schedule" element={
-          
-            < Schedule/>            
-          
-        } /> 
+        <Route path="/about" element={<About />} />
+        <Route path="/schedule" element={<Schedule />} />
 
-           <Route path="/leaderboard" element={
-          
-            < Leaderboard/>            
-          
-        } /> 
-           <Route path="/gallery" element={
-        
-            < Gallery/>            
-          
-        } /> 
-           <Route path="/contact" element={
-         
-            < Contact/>            
-         
-        } /> 
-
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/gallery" element={<Gallery />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
       {!hideNavbar && (isMobile ? <FooterMobile /> : <FooterDesktop />)}
     </>
