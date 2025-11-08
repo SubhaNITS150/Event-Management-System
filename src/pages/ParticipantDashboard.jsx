@@ -1,29 +1,17 @@
 import Navbar from "../components/navigationbars/NavbarDesktop";
 import Footer from "../components/footer/FooterDesktop";
 import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import {
-  CheckCircle2,
-  Clock,
-  Trophy,
-  Users,
-  FileText,
-  Award,
-} from "lucide-react";
-import { Link } from "react-router-dom";
+import { CheckCircle2, Users } from "lucide-react";
 import { Progress } from "../components/ui/progress";
 import { supabase } from "../lib/supabaseClient";
-// ⬇️ Import useEffect
 import { useState, useEffect } from "react";
 
 export default function ParticipantDashboard() {
   const [userName, setUserName] = useState("");
   const [teamData, setTeamData] = useState(null);
-  // ⬇️ Set initial loading state to true
   const [loading, setLoading] = useState(true);
 
-  // 🚀 Wrap all data-fetching logic in a useEffect hook
   useEffect(() => {
     const fetchUserAndTeam = async () => {
       try {
@@ -35,7 +23,7 @@ export default function ParticipantDashboard() {
         if (error) throw error;
         if (!user) {
           console.warn("User not logged in");
-          return; // Exit early
+          return;
         }
 
         // 2️⃣ Get user profile (name)
@@ -53,65 +41,78 @@ export default function ParticipantDashboard() {
           .from("team_members")
           .select("team_id, role")
           .eq("user_id", user.id)
-          .maybeSingle(); // This correctly finds the user's single team
+          .limit(1)
+          .single();
 
         if (memberErr) throw memberErr;
         if (!teamMemberRecord) {
-          setTeamData(null);
           console.log("User not part of any team yet");
-          return; // Exit early
+          setTeamData(null);
+          return;
         }
 
         const team_id = teamMemberRecord.team_id;
 
-        // 4️⃣ Fetch the team details
-        const { data: team, error: teamErr } = await supabase
+        // 4️⃣ Fetch the team details safely (handles duplicates)
+        const { data: teamRows, error: teamErr } = await supabase
           .from("teams")
           .select("team_id, team_name, registration_date")
           .eq("team_id", team_id)
-          .single();
+          .limit(1); // ✅ avoids PGRST116 error
 
         if (teamErr) throw teamErr;
+        if (!teamRows || teamRows.length === 0) {
+          console.warn("No team found for this team_id");
+          return;
+        }
 
-        // 5️⃣ Fetch all members of the team (including their names from 'users' table)
+        const team = teamRows[0];
+
+        // 5️⃣ Fetch all members of the team
         const { data: members, error: membersErr } = await supabase
           .from("team_members")
-          .select("user_id, role, college, aadhar, users(name, email)") // <-- Join with users table
+          .select("user_id, role, college, aadhar")
           .eq("team_id", team_id);
 
         if (membersErr) throw membersErr;
 
-        // Combine all into final object
+        // Fetch user profiles for all members
+        const userIds = members.map((m) => m.user_id);
+        const { data: userProfiles, error: userErr } = await supabase
+          .from("users")
+          .select("user_id, name, email")
+          .in("user_id", userIds);
+
+        if (userErr) throw userErr;
+
+        // Merge member data with user data
+        const formattedMembers = members.map((m) => {
+          const userProfile = userProfiles.find((u) => u.user_id === m.user_id);
+          return {
+            name: userProfile?.name || "Unknown",
+            email: userProfile?.email || "No email",
+            role: m.role,
+          };
+        });
+
+        // Combine into final team object
         const formattedTeam = {
           id: team.team_id,
           name: team.team_name,
           registrationDate: team.registration_date,
-          members: members.map((m) => ({
-            name: m.users?.name, // Get name from joined users table
-            email: m.users?.email, // Get email from joined users table
-            role: m.role,
-          })),
+          members: formattedMembers,
         };
 
         setTeamData(formattedTeam);
       } catch (err) {
         console.error("Error fetching team:", err);
       } finally {
-        // ⬇️ This will always run, even if there's an error
         setLoading(false);
       }
     };
 
-    // 🚀 Call the function inside the hook
     fetchUserAndTeam();
-
-    // ⬇️ Empty dependency array means this runs ONCE when the component mounts
   }, []);
-
-  // ❌ REMOVED the redundant fetchUser() function and the misplaced calls
-  // The logic is now handled correctly inside useEffect.
-
-  // ... (mock data comments are fine) ...
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -133,7 +134,7 @@ export default function ParticipantDashboard() {
             </div>
           ) : teamData ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              {/* Left big card */}
+              {/* Team Details Card */}
               <Card className="p-6 lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
                   <div>
@@ -217,9 +218,7 @@ export default function ParticipantDashboard() {
                   </span>
                   <span className="text-sm text-muted-foreground">50%</span>
                 </div>
-                {/* progress wrapper */}
                 <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-                  {/* Using your Progress component; className used to style height and curve */}
                   <Progress value={50} className="h-3 rounded-full" />
                 </div>
               </div>
