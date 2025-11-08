@@ -14,140 +14,104 @@ import {
 import { Link } from "react-router-dom";
 import { Progress } from "../components/ui/progress";
 import { supabase } from "../lib/supabaseClient";
-import { useState } from "react";
+// ⬇️ Import useEffect
+import { useState, useEffect } from "react";
 
 export default function ParticipantDashboard() {
   const [userName, setUserName] = useState("");
   const [teamData, setTeamData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  // ⬇️ Set initial loading state to true
+  const [loading, setLoading] = useState(true);
 
-  const fetchUserAndTeam = async () => {
-    setLoading(true);
-    try {
-      // 1️⃣ Get logged-in user
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (error) throw error;
-      if (!user) {
-        console.warn("User not logged in");
+  // 🚀 Wrap all data-fetching logic in a useEffect hook
+  useEffect(() => {
+    const fetchUserAndTeam = async () => {
+      try {
+        // 1️⃣ Get logged-in user
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+        if (error) throw error;
+        if (!user) {
+          console.warn("User not logged in");
+          return; // Exit early
+        }
+
+        // 2️⃣ Get user profile (name)
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("name")
+          .eq("user_id", user.id)
+          .single();
+
+        if (profileError) throw profileError;
+        setUserName(profile.name);
+
+        // 3️⃣ Find which team this user belongs to
+        const { data: teamMemberRecord, error: memberErr } = await supabase
+          .from("team_members")
+          .select("team_id, role")
+          .eq("user_id", user.id)
+          .maybeSingle(); // This correctly finds the user's single team
+
+        if (memberErr) throw memberErr;
+        if (!teamMemberRecord) {
+          setTeamData(null);
+          console.log("User not part of any team yet");
+          return; // Exit early
+        }
+
+        const team_id = teamMemberRecord.team_id;
+
+        // 4️⃣ Fetch the team details
+        const { data: team, error: teamErr } = await supabase
+          .from("teams")
+          .select("team_id, team_name, registration_date")
+          .eq("team_id", team_id)
+          .single();
+
+        if (teamErr) throw teamErr;
+
+        // 5️⃣ Fetch all members of the team (including their names from 'users' table)
+        const { data: members, error: membersErr } = await supabase
+          .from("team_members")
+          .select("user_id, role, college, aadhar, users(name, email)") // <-- Join with users table
+          .eq("team_id", team_id);
+
+        if (membersErr) throw membersErr;
+
+        // Combine all into final object
+        const formattedTeam = {
+          id: team.team_id,
+          name: team.team_name,
+          registrationDate: team.registration_date,
+          members: members.map((m) => ({
+            name: m.users?.name, // Get name from joined users table
+            email: m.users?.email, // Get email from joined users table
+            role: m.role,
+          })),
+        };
+
+        setTeamData(formattedTeam);
+      } catch (err) {
+        console.error("Error fetching team:", err);
+      } finally {
+        // ⬇️ This will always run, even if there's an error
         setLoading(false);
-        return;
       }
+    };
 
-      // 2️⃣ Get user profile (name)
-      const { data: profile, error: profileError } = await supabase
-        .from("users")
-        .select("name")
-        .eq("user_id", user.id)
-        .single();
+    // 🚀 Call the function inside the hook
+    fetchUserAndTeam();
 
-      if (profileError) throw profileError;
-      setUserName(profile.name);
+    // ⬇️ Empty dependency array means this runs ONCE when the component mounts
+  }, []);
 
-      // 3️⃣ Find which team this user belongs to
-      const { data: teamMemberRecord, error: memberErr } = await supabase
-        .from("team_members")
-        .select("team_id, role")
-        .eq("user_id", user.id)
-        .maybeSingle();
+  // ❌ REMOVED the redundant fetchUser() function and the misplaced calls
+  // The logic is now handled correctly inside useEffect.
 
-      if (memberErr) throw memberErr;
-      if (!teamMemberRecord) {
-        setTeamData(null);
-        console.log("User not part of any team yet");
-        setLoading(false);
-        return;
-      }
-
-      const team_id = teamMemberRecord.team_id;
-
-      // 4️⃣ Fetch the team details
-      const { data: team, error: teamErr } = await supabase
-        .from("teams")
-        .select("team_id, team_name, registration_date")
-        .eq("team_id", team_id)
-        .single();
-
-      if (teamErr) throw teamErr;
-
-      // 5️⃣ Fetch all members of the team
-      const { data: members, error: membersErr } = await supabase
-        .from("team_members")
-        .select("user_id, role, college, aadhar, users(name, email)")
-        .eq("team_id", team_id);
-
-      if (membersErr) throw membersErr;
-
-      // Combine all into final object
-      const formattedTeam = {
-        id: team.team_id,
-        name: team.team_name,
-        registrationDate: team.registration_date,
-        members: members.map((m) => ({
-          name: m.users?.name,
-          email: m.users?.email,
-          role: m.role,
-        })),
-      };
-
-      setTeamData(formattedTeam);
-    } catch (err) {
-      console.error("Error fetching team:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🚀 Trigger data load (once, without useEffect)
-  if (!userName && !loading) fetchUserAndTeam();
-
-  //todo: remove mock functionality
-  // const teamData = {
-  //   name: "Code Warriors",
-  //   id: "HK2026-001",
-  //   members: ["John Doe", "Jane Smith", "Bob Johnson"],
-  //   registrationStatus: "confirmed",
-  //   qualified: ["Round 1"],
-  // };
-
-  // const upcomingTasks = [
-  //   {
-  //     title: "Round 2: Problem Solving",
-  //     date: "Mar 16, 2026",
-  //     time: "10:00 AM",
-  //     status: "upcoming",
-  //   },
-  // ];
-
-  // Backend data
-  const fetchUser = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    if (user) {
-      const { data: profile, error: profileError } = await supabase
-        .from("users")
-        .select("name")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profileError) console.error(profileError);
-      else setUserName(profile?.name || "");
-    }
-  };
-
-  if (!userName) {
-    // Call it once when not loaded
-    fetchUser();
-  }
+  // ... (mock data comments are fine) ...
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
