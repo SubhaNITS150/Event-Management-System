@@ -23,10 +23,50 @@ import Round1 from "../pages/Round1.jsx";
 import Round2 from "../pages/Round2.jsx";
 import AlreadyRegistered from "../pages/AlreadyRegistered.jsx";
 import RegistrationGuard from "./RegistereGuard.jsx";
+import { useState } from "react";
+import { useEffect } from "react";
+import AdminRoute from "./AdminRoute.jsx";
 
 const AppRouter = () => {
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const location = useLocation();
   const isMobile = useViewport();
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: profile, error } = await supabase
+          .from("users") // Or "profiles" or whatever your table is
+          .select("role") // <-- The important part
+          .eq("user_id", user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (profile) {
+          setUserRole(profile.role);
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+        setUserRole("user"); // Default to participant on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
 
   const hideNavbar =
     location.pathname === "/signUp" || location.pathname === "/login";
@@ -52,14 +92,18 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
-              <AdminDashboard />
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/register"
           element={
