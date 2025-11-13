@@ -26,6 +26,7 @@ import RegistrationGuard from "./RegistereGuard.jsx";
 import { useState } from "react";
 import { useEffect } from "react";
 import AdminRoute from "./AdminRoute.jsx";
+import { supabase } from "../lib/supabaseClient.js";
 
 const AppRouter = () => {
   const [userRole, setUserRole] = useState(null);

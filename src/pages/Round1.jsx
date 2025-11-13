@@ -1,309 +1,242 @@
-
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { useToast } from "../hooks/use-toast";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
-import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Clock, Send } from "lucide-react";
-import { useToast } from "../hooks/use-toast";
+import { Clock, Send, Loader2 } from "lucide-react"; // ✅ Added Loader icon
 import { Textarea } from "../components/ui/textarea";
 
 export default function Round1() {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true); // ✅ Loader state
+  const [mcqQuestions, setMcqQuestions] = useState([]);
+  const [codingQuestion, setCodingQuestion] = useState(null);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [code, setCode] = useState("");
+  const [testResults, setTestResults] = useState([]);
   const [timeRemaining] = useState("02:45:30");
 
-  // ✅ Mock coding problem data (to be replaced with backend data later)
-  const mockProblem = {
-    id: "problem-2sum",
-    title: "Two Sum Problem",
-    description:
-      "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-    example: {
-      input: "nums = [2,7,11,15], target = 9",
-      output: "[0,1]",
-      explanation: "nums[0] + nums[1] == 9",
-    },
-    constraints: [
-      "2 ≤ nums.length ≤ 10⁴",
-      "-10⁹ ≤ nums[i] ≤ 10⁹",
-      "-10⁹ ≤ target ≤ 10⁹",
-    ],
-    testCases: [
-      { input: "[2,7,11,15], 9", expected: "[0,1]" },
-      { input: "[3,2,4], 6", expected: "[1,2]" },
-      { input: "[3,3], 6", expected: "[0,1]" },
-    ],
-  };
+  // ✅ Fetch Round 1 questions
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      setLoading(true);
+      try {
+        // 1️⃣ Get Round 1 ID
+        const { data: roundData, error: roundError } = await supabase
+          .from("rounds")
+          .select("round_id")
+          .eq("round_number", 1)
+          .single();
 
-  const mcqQuestions = [
-    {
-      id: "q1",
-      question: "What is the time complexity of binary search?",
-      options: ["O(n)", "O(log n)", "O(n²)", "O(1)"],
-    },
-    {
-      id: "q2",
-      question: "Which data structure uses LIFO principle?",
-      options: ["Queue", "Stack", "Tree", "Graph"],
-    },
-  ];
+        if (roundError || !roundData) throw new Error("Round 1 not found");
+        const roundId = roundData.round_id;
 
-  const [testResults, setTestResults] = useState([]);
+        // 2️⃣ Fetch MCQ questions and options
+        const { data: mcqData, error: mcqError } = await supabase
+          .from("questions")
+          .select("question_id, question_text, mcq_options(option_text)")
+          .eq("round_id", roundId)
+          .not("mcq_options", "is", null);
 
-  const handleSubmit = () => {
-    console.log("Submitted answers:", selectedAnswers, "Code:", code);
-    toast({
-      title: "Round 1 Submitted!",
-      description:
-        "Your answers have been submitted successfully. Check your dashboard for results.",
-    });
-  };
+        if (mcqError) throw mcqError;
+        setMcqQuestions(mcqData || []);
 
-  // ✅ Simulated "Run Code" using mock test cases
+        // 3️⃣ Fetch coding questions (and pick one randomly)
+        const { data: codingData, error: codingError } = await supabase
+          .from("questions")
+          .select(
+            "question_id, question_text, coding_problems(problem_statement, testcases(input_data, expected_output))"
+          )
+          .eq("round_id", roundId)
+          .not("coding_problems", "is", null);
+
+        if (codingError) throw codingError;
+        if (codingData.length > 0) {
+          const random = codingData[Math.floor(Math.random() * codingData.length)];
+          setCodingQuestion(random);
+        }
+
+        // toast({
+        //   title: "Questions Loaded",
+        //   description: "MCQs and coding challenge fetched successfully!",
+        // });
+      } catch (error) {
+        console.error("❌ Error fetching questions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load questions from database.",
+        });
+      } finally {
+        setLoading(false); // ✅ Stop loader
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  // ✅ Simulate code execution
+  // ✅ Simulate code execution
   const handleRunCode = () => {
+    if (!codingQuestion) return;
     if (!code.trim()) {
-      toast({ title: "No code", description: "Please write some code before running." });
+      toast({ title: "No code", description: "Please write some code first." });
       return;
     }
 
-    const results = mockProblem.testCases.map((tc) => {
-      const passed = code.includes(tc.expected);
+    // FIX: Access coding_problems array (first item)
+    const problemData = codingQuestion.coding_problems?.[0];
+
+    if (!problemData) {
+      toast({ title: "Error", description: "Problem data missing." });
+      return;
+    }
+
+    const results = problemData.testcases.map((tc) => {
+      const passed = code.includes(tc.expected_output);
       return { ...tc, passed };
     });
-
     setTestResults(results);
 
     const passedCount = results.filter((r) => r.passed).length;
-    const total = results.length;
-
     toast({
       title: "Run Results",
-      description: `${passedCount}/${total} test case(s) passed.`,
+      description: `${passedCount}/${results.length} test case(s) passed.`,
     });
   };
 
-  const handleShowTestCases = () => {
-    setTestResults(mockProblem.testCases.map((tc) => ({ ...tc, passed: null })));
+  const handleSubmit = () => {
+    console.log("✅ Submitted answers:", selectedAnswers, "Code:", code);
     toast({
-      title: "Test Cases Loaded",
-      description: "Showing available test cases below.",
+      title: "Round 1 Submitted!",
+      description: "Your answers were successfully recorded.",
     });
   };
 
+  // ✅ Loader UI
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <Loader2 className="w-10 h-10 animate-spin text-orange-500 mb-3" />
+        <p className="text-gray-600 text-sm font-medium">Loading Round 1 Questions...</p>
+      </div>
+    );
+  }
+
+  // ✅ Main UI (shown after loading)
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-     
-      <main className="flex-1 py-10">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="flex flex-wrap justify-between items-start mb-8 gap-6">
-            <div className="flex-1 min-w-0">
-              <h1 className="font-poppins font-extrabold text-4xl md:text-5xl text-gray-900 leading-tight mb-2">
-                Round 1: Online Test
-              </h1>
-              <p className="text-muted-foreground text-lg">MCQ + Coding Challenge</p>
-            </div>
-
-            <div className="flex-shrink-0">
-              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-lg border border-orange-300 bg-orange-50">
-                <Clock className="h-5 w-5 text-orange-500" />
-                <span
-                  className="font-mono text-lg font-semibold text-orange-600"
-                  data-testid="text-timer"
-                >
-                  {timeRemaining}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <Tabs defaultValue="mcq" className="space-y-6">
-            <TabsList className="inline-flex gap-2 p-1 rounded-lg bg-transparent">
-              <TabsTrigger
-                value="mcq"
-                data-testid="tab-mcq"
-                className="px-4 py-2 rounded-md text-sm font-medium bg-white border border-gray-200 shadow-sm"
-              >
-                MCQ Questions
-              </TabsTrigger>
-              <TabsTrigger
-                value="coding"
-                data-testid="tab-coding"
-                className="px-4 py-2 rounded-md text-sm font-medium bg-gray-100 border border-gray-100"
-              >
-                Coding Challenge
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="mcq">
-              <div className="space-y-6">
-                {mcqQuestions.map((q, index) => (
-                  <Card
-                    key={q.id}
-                    className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100"
-                    data-testid={`mcq-${index}`}
-                  >
-                    <h3 className="font-semibold text-lg text-gray-900 mb-6">
-                      {index + 1}. {q.question}
-                    </h3>
-
-                    <RadioGroup
-                      value={selectedAnswers[q.id]}
-                      onValueChange={(value) =>
-                        setSelectedAnswers({ ...selectedAnswers, [q.id]: value })
-                      }
-                      className="space-y-3"
-                    >
-                      {q.options.map((option, optIndex) => (
-                        <label
-                          key={optIndex}
-                          htmlFor={`${q.id}-${optIndex}`}
-                          className="flex items-center gap-4 p-4 rounded-lg bg-white border border-transparent hover:bg-gray-50 cursor-pointer transition"
-                          data-testid={`option-${index}-${optIndex}`}
-                        >
-                          <RadioGroupItem
-                            value={option}
-                            id={`${q.id}-${optIndex}`}
-                            className="mr-2"
-                          />
-                          <span className="text-gray-800">{option}</span>
-                        </label>
-                      ))}
-                    </RadioGroup>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="coding">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                  <h3 className="font-poppins font-semibold text-xl mb-4 text-gray-900">
-                    Problem Statement
-                  </h3>
-                  <div className="space-y-4 text-sm text-gray-700">
-                    <div>
-                      <h4 className="font-semibold mb-2">{mockProblem.title}</h4>
-                      <p className="text-muted-foreground">{mockProblem.description}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">Example:</h4>
-                      <pre className="bg-gray-100 p-3 rounded-md font-mono text-xs overflow-x-auto">
-{`Input: ${mockProblem.example.input}
-Output: ${mockProblem.example.output}
-Explanation: ${mockProblem.example.explanation}`}
-                      </pre>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold mb-2">Constraints:</h4>
-                      <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                        {mockProblem.constraints.map((c, i) => (
-                          <li key={i}>{c}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                  <h3 className="font-poppins font-semibold text-xl mb-4 text-gray-900">
-                    Code Editor
-                  </h3>
-                  <Textarea
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="// Write your code here..."
-                    className="font-mono text-sm min-h-[400px] p-4 border border-gray-200 rounded-md bg-white"
-                    data-testid="textarea-code"
-                  />
-
-                  <div className="flex gap-3 mt-4">
-                    <Button
-                      variant="outline"
-                      className="flex-1 py-3 border border-gray-200 bg-white hover:bg-gray-50"
-                      data-testid="button-run"
-                      onClick={handleRunCode}
-                    >
-                      Run Code
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 py-3 border border-gray-200 bg-white hover:bg-gray-50"
-                      data-testid="button-test"
-                      onClick={handleShowTestCases}
-                    >
-                      Test Cases
-                    </Button>
-                  </div>
-
-                  {/* ✅ Display Test Cases Below */}
-                  {testResults.length > 0 && (
-                    <div className="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <h4 className="font-semibold text-gray-800 mb-3">Test Case Results:</h4>
-                      <ul className="space-y-2 text-sm">
-                        {testResults.map((tc, index) => (
-                          <li
-                            key={index}
-                            className={`p-3 rounded-md flex justify-between items-center ${
-                              tc.passed === true
-                                ? "bg-green-50 border border-green-200"
-                                : tc.passed === false
-                                ? "bg-red-50 border border-red-200"
-                                : "bg-white border border-gray-100"
-                            }`}
-                          >
-                            <div>
-                              <p>
-                                <span className="font-medium text-gray-700">
-                                  Input:
-                                </span>{" "}
-                                {tc.input}
-                              </p>
-                              <p>
-                                <span className="font-medium text-gray-700">
-                                  Expected:
-                                </span>{" "}
-                                {tc.expected}
-                              </p>
-                            </div>
-                            {tc.passed !== null && (
-                              <span
-                                className={`font-semibold ${
-                                  tc.passed ? "text-green-600" : "text-red-600"
-                                }`}
-                              >
-                                {tc.passed ? "Passed ✅" : "Failed ❌"}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="mt-8 flex justify-end">
-            <Button
-              size="lg"
-              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 rounded-md shadow"
-              onClick={handleSubmit}
-              data-testid="button-submit-round1"
-            >
-              <Send className="h-5 w-5" />
-              Submit Round 1
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-10 px-6">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Round 1: Online Test</h1>
+        <div className="flex items-center gap-2 border px-4 py-2 rounded-md bg-orange-50">
+          <Clock className="h-5 w-5 text-orange-500" />
+          <span className="text-orange-600 font-mono font-semibold">
+            {timeRemaining}
+          </span>
         </div>
-      </main>
-      
+      </div>
+
+      <Tabs defaultValue="mcq">
+        <TabsList>
+          <TabsTrigger value="mcq">MCQs</TabsTrigger>
+          <TabsTrigger value="coding">Coding</TabsTrigger>
+        </TabsList>
+
+        {/* 🧩 MCQ Section */}
+        <TabsContent value="mcq" className="space-y-6 mt-4">
+          {mcqQuestions.length === 0 ? (
+            <p className="text-gray-600 text-center">No MCQ questions available.</p>
+          ) : (
+            mcqQuestions.map((q, index) => (
+              <Card key={q.question_id} className="p-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  {index + 1}. {q.question_text}
+                </h3>
+                <RadioGroup
+                  value={selectedAnswers[q.question_id]}
+                  onValueChange={(val) =>
+                    setSelectedAnswers({ ...selectedAnswers, [q.question_id]: val })
+                  }
+                >
+                  {q.mcq_options.map((opt, i) => (
+                    <label
+                      key={i}
+                      className="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50"
+                    >
+                      <RadioGroupItem value={opt.option_text} />
+                      <span>{opt.option_text}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
+        {/* 💻 Coding Section */}
+        <TabsContent value="coding" className="space-y-6 mt-4">
+          {codingQuestion ? (
+            <>
+              <Card className="p-6">
+                <h3 className="text-xl font-semibold mb-2">
+                  {codingQuestion.question_text}
+                </h3>
+                <p className="text-sm text-gray-600 whitespace-pre-line">
+                  {codingQuestion.coding_problems.problem_statement}
+                </p>
+              </Card>
+
+              <Card className="p-6">
+                <Textarea
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="// Write your code here..."
+                  className="min-h-[300px] font-mono text-sm"
+                />
+                <div className="flex gap-3 mt-4">
+                  <Button onClick={handleRunCode}>Run Code</Button>
+                  <Button variant="secondary" onClick={() => setTestResults([])}>
+                    Clear
+                  </Button>
+                </div>
+                {testResults.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-semibold mb-2">Test Results:</h4>
+                    {testResults.map((tc, i) => (
+                      <div
+                        key={i}
+                        className={`p-3 mb-2 border rounded ${
+                          tc.passed ? "bg-green-50" : "bg-red-50"
+                        }`}
+                      >
+                        <p>Input: {tc.input_data}</p>
+                        <p>Expected: {tc.expected_output}</p>
+                        <p>
+                          Result:{" "}
+                          <strong
+                            className={tc.passed ? "text-green-600" : "text-red-600"}
+                          >
+                            {tc.passed ? "Passed ✅" : "Failed ❌"}
+                          </strong>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </>
+          ) : (
+            <p className="text-gray-600 text-center">No coding question found.</p>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex justify-end mt-8">
+        <Button onClick={handleSubmit} className="bg-orange-500 text-white">
+          <Send className="mr-2 h-5 w-5" /> Submit Round 1
+        </Button>
+      </div>
     </div>
   );
 }
