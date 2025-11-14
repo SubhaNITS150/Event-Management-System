@@ -1,287 +1,131 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Send, Loader2, Play } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { Clock, Send, Loader2, Play, AlertTriangle, ShieldAlert, Maximize, Lock, Camera, Mic } from "lucide-react";
 import { Editor } from "@monaco-editor/react";
 import axios from "axios";
 
 const LANGUAGE_CONFIG = {
   c: {
     label: "C (GCC 10.2.0)",
-    pistonRuntime: "c", // API expects "c"
-    monacoLanguage: "c", // Editor expects "c"
+    pistonRuntime: "c",
+    monacoLanguage: "c",
     boilerplate: `#include <stdio.h>\n\nint main() {\n    // Write C code here\n    int n;\n    if (scanf("%d", &n) != 1) return 0;\n    printf("%d", n);\n    return 0;\n}`,
   },
   cpp: {
     label: "C++ (GCC 10.2.0)",
-    pistonRuntime: "c++", // API expects "c++"
-    monacoLanguage: "cpp", // Editor expects "cpp"
+    pistonRuntime: "c++",
+    monacoLanguage: "cpp",
     boilerplate: `#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    // Write C++ code here\n    int n;\n    if (!(cin >> n)) return 0;\n    cout << n;\n    return 0;\n}`,
   },
 };
 
+const MAX_WARNINGS = 3;
+
 export default function Round1() {
   const { toast } = useToast();
+  
+  // Standard State
   const [loading, setLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [code, setCode] = useState(LANGUAGE_CONFIG["c"].boilerplate);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [language, setLanguage] = useState("c"); // ✅ State for submit
+  const [language, setLanguage] = useState("c");
   const [mcqQuestions, setMcqQuestions] = useState([]);
   const [codingQuestion, setCodingQuestion] = useState(null);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [testResults, setTestResults] = useState([]);
-  const [timeRemaining] = useState("02:45:30");
+  
+  // 🛡️ Proctoring State
+  const [hasStarted, setHasStarted] = useState(false);
+  const [warnings, setWarnings] = useState(0);
+  const [isTerminated, setIsTerminated] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const handleLanguageChange = (newLang) => {
-    setLanguage(newLang);
-    setCode(LANGUAGE_CONFIG[newLang].boilerplate);
-
-    toast({
-      title: "Language Changed",
-      description: `Switched to ${LANGUAGE_CONFIG[newLang].label}. Code reset.`,
-    });
-  };
-
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      setLoading(true);
-      try {
-        // 1️⃣ Get Round 1 ID
-        const { data: roundData, error: roundError } = await supabase
-          .from("rounds")
-          .select("round_id")
-          .eq("round_number", 1)
-          .single();
-
-        if (roundError || !roundData) {
-          // Log the specific Supabase error if it exists
-          if (roundError) console.error("Supabase Error Details:", roundError);
-          if (!roundData) console.error("Query returned no data for Round 1.");
-          throw new Error("Round 1 not found");
-        }
-        const roundId = roundData.round_id;
-
-        // 2️⃣ Fetch MCQ questions
-        const { data: mcqData, error: mcqError } = await supabase
-          .from("questions")
-          .select("question_id, question_text, mcq_options(option_text)")
-          .eq("round_id", roundId)
-          .not("mcq_options", "is", null);
-
-        if (mcqError) throw mcqError;
-        setMcqQuestions(mcqData || []);
-
-        // 3️⃣ Fetch coding questions AND nested testcases
-        const { data: codingData, error: codingError } = await supabase
-          .from("questions")
-          .select(
-            `
-            question_id, 
-            question_text, 
-            coding_problems (
-              problem_statement,
-              testcases (
-                input_data,
-                expected_output
-              )
-            )
-          `
-          )
-          .eq("round_id", roundId)
-          .not("coding_problems", "is", null);
-
-        // if (codingError) throw codingError;
-        if (codingData && codingData.length > 0) {
-          setCodingQuestion(codingData[0]);
-          // Optional: Set a default C starter template
-          setCode(
-            `#include <stdio.h>\n\nint main() {\n    // Write your code here\n    return 0;\n}`
-          );
-        }
-        setLoading(false);
-
-        toast({
-          title: "Questions Loaded",
-          description: "MCQs and coding challenge fetched successfully!",
-        });
-      } catch (error) {
-        console.error("❌ Error fetching questions:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load questions from database.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuestions();
-  }, [toast]); // Added toast as dependency
+  // 🎥 Media State
+  const [mediaStream, setMediaStream] = useState(null);
+  const [isMediaGranted, setIsMediaGranted] = useState(false);
+  const videoRef = useRef(null); // Reference for the video element
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  // ✅ Simulate code execution
-  const handleRunCode = async () => {
-    if (!codingQuestion) return;
-    if (!code.trim()) {
-      toast({ title: "No code", description: "Please write some code first." });
-      return;
-    }
-
-    const problem = codingQuestion.coding_problems?.[0];
-    const testCases = problem?.testcases;
-
-    if (!testCases || testCases.length === 0) {
-      toast({ title: "Error", description: "No test cases found." });
-      return;
-    }
-
-    setIsRunning(true);
-    setTestResults([]); // Clear previous results
-
-    const accumulatedResults = [];
-
+  // ------------------------------------------------------------
+  // 🎥 MEDIA SETUP LOGIC
+  // ------------------------------------------------------------
+  const requestMediaPermissions = async () => {
     try {
-      const API_URL = "https://emkc.org/api/v2/piston/execute";
-      const currentConfig = LANGUAGE_CONFIG[language];
-
-      // 🔄 Loop through test cases ONE BY ONE instead of Promise.all
-      for (let i = 0; i < testCases.length; i++) {
-        const tc = testCases[i];
-
-        const safeInput = tc.input_data !== null && tc.input_data !== undefined 
-          ? String(tc.input_data) 
-          : "";
-
-        // Optional: Update UI to show progress (e.g., "Running test case 1/3...")
-        toast({
-          title: `Running Test Case ${i + 1}/${testCases.length}...`,
-          duration: 1000,
+        // Request both video and audio
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 320, height: 240 }, // Low res is fine for proctoring
+            audio: true 
         });
-
-        try {
-          const response = await axios.post(API_URL, {
-            language: currentConfig.pistonRuntime,
-            version: "*",
-            files: [{ content: code }],
-            stdin: tc.input_data || "",
-          });
-
-          const result = response.data.run;
-          // let passed = false;
-          // let actualOutput = "";
-
-          // Handle Compilation/Runtime Errors
-          if (result.code !== 0) {
-            accumulatedResults.push({
-              input: tc.input_data,
-              expected: tc.expected_output,
-              actual: result.stderr || result.output,
-              passed: false,
-              isError: true,
-            });
-          } else {
-            // Compare Output
-            const actualOutput = result.output.trim();
-            const expectedOutput = tc.expected_output.trim();
-            const passed = actualOutput === expectedOutput;
-
-            accumulatedResults.push({
-              input: tc.input_data,
-              expected: expectedOutput,
-              actual: actualOutput,
-              passed: passed,
-              isError: false,
-            });
-          }
-        } catch (err) {
-          // Handle specific API errors (like 429) for a specific case
-          accumulatedResults.push({
-            input: tc.input_data,
-            expected: tc.expected_output,
-            actual: `Server Error: ${err.response?.status || err.message}`,
-            passed: false,
-            isError: true,
-          });
-        }
-
-        // 🛑 CRITICAL: Wait 500ms before sending the next request
-        // This prevents the 429 Too Many Requests error
-        if (i < testCases.length - 1) {
-          await sleep(500);
-        }
-      }
-
-      // Update state with all results
-      setTestResults(accumulatedResults);
-
-      const passedCount = accumulatedResults.filter((r) => r.passed).length;
-      toast({
-        title: "Execution Complete",
-        description: `${passedCount}/${accumulatedResults.length} test cases passed.`,
-        variant:
-          passedCount === accumulatedResults.length ? "default" : "destructive",
-      });
-    } catch (error) {
-      console.error("Global Execution error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to run code.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRunning(false);
+        setMediaStream(stream);
+        setIsMediaGranted(true);
+        return true;
+    } catch (err) {
+        console.error("Media Error:", err);
+        toast({
+            title: "Permission Denied",
+            description: "You must allow Camera and Microphone access to proceed.",
+            variant: "destructive"
+        });
+        return false;
     }
   };
 
-  // ✅ NEW SUBMISSION LOGIC
-  // ✅ NEW SUBMISSION LOGIC
-  const handleSubmit = async () => {
+  // Cleanup media on unmount or termination
+  useEffect(() => {
+    return () => {
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+    };
+  }, [mediaStream]);
+
+  // Attach stream to video element whenever state changes
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+        videoRef.current.srcObject = mediaStream;
+    }
+  }, [mediaStream, hasStarted]);
+
+  // ------------------------------------------------------------
+  // 🚀 SUBMISSION LOGIC
+  // ------------------------------------------------------------
+  const handleSubmit = useCallback(async (autoSubmitReason = null) => {
     setIsSubmitting(true);
-    toast({ title: "Submitting...", description: "Recording your answers." });
+    
+    // Stop Camera on submit
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+    }
+
+    if (autoSubmitReason) {
+      toast({
+        title: "Test Terminated",
+        description: `Auto-submitting due to: ${autoSubmitReason}`,
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Submitting...", description: "Recording your answers." });
+    }
 
     try {
-      // 1. Get the current user's ID
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Authentication required");
 
-      if (authError || !user) {
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to submit.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      const authUserId = user.id; // 2. Get the associated 'team_id' from the 'teams' table
-
-      // ---------------------------------------------------------
-      // 👇 FIX IS HERE: I changed 'YOUR_COLUMN...' to 'team_leader_id'
-      // Check your Supabase 'teams' table. If the column is named 'user_id', change it here.
-      // ---------------------------------------------------------
       const { data: teamData, error: teamError } = await supabase
         .from("teams")
         .select("team_id")
-        .eq("team_leader_id", authUserId)
+        .eq("team_leader_id", user.id)
         .single();
 
-      if (teamError || !teamData) {
-        console.error("Team lookup error:", teamError);
-        throw new Error(
-          "Could not find a team for the current user. Ensure you are registered as a team leader."
-        );
-      }
-      const actualTeamId = teamData.team_id; // 3. Format MCQ answers
+      if (teamError || !teamData) throw new Error("Team not found.");
+      const actualTeamId = teamData.team_id;
 
       const mcqSubmissions = Object.entries(selectedAnswers).map(
         ([q_id, ans_text]) => ({
@@ -290,7 +134,7 @@ export default function Round1() {
           question_id: q_id,
           answer_text: ans_text,
         })
-      ); // 4. Format coding answer (if it exists)
+      );
 
       const allSubmissions = [...mcqSubmissions];
       if (codingQuestion && code.trim()) {
@@ -302,136 +146,421 @@ export default function Round1() {
         });
       }
 
-      if (allSubmissions.length === 0) {
-        toast({
-          title: "Nothing to submit",
-          description: "You haven't answered any questions.",
-        });
-        setIsSubmitting(false);
-        return;
-      } // 5. Upsert all submissions
+      if (allSubmissions.length > 0) {
+        const { error: submitError } = await supabase
+          .from("submissions")
+          .upsert(allSubmissions, { onConflict: "team_id, question_id" });
 
-      const { data, error: submitError } = await supabase
-        .from("submissions")
-        .upsert(allSubmissions, {
-          onConflict: "team_id, question_id",
-        })
-        .select();
-
-      if (submitError) {
-        console.error("❌ Supabase Submit Error:", submitError);
-        throw new Error(submitError.message);
+        if (submitError) throw submitError;
       }
 
-      toast({
-        title: "Round 1 Submitted!",
-        description: `Successfully recorded ${data.length} answer(s).`,
-      });
+      if (!autoSubmitReason) {
+        toast({ title: "Round 1 Submitted!", description: "Successfully recorded." });
+      }
+      
+      setIsTerminated(true);
+
     } catch (error) {
-      console.error("❌ Error in handleSubmit:", error);
+      console.error("Submit Error:", error);
       toast({
         title: "Submission Failed",
-        description: error.message || "An error occurred. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
+      if (!autoSubmitReason && document.fullscreenElement) {
+        document.exitFullscreen().catch(console.error);
+      }
+    }
+  }, [code, codingQuestion, selectedAnswers, toast, mediaStream]);
+
+  // ------------------------------------------------------------
+  // 🛡️ PROCTORING LOGIC
+  // ------------------------------------------------------------
+  
+  const handleViolation = useCallback((reason) => {
+    if (isTerminated || isSubmitting) return;
+
+    setWarnings((prev) => {
+      const newCount = prev + 1;
+      
+      if (newCount >= MAX_WARNINGS) {
+        setIsTerminated(true);
+        handleSubmit(`Too many violations (${newCount}). Disqualified.`);
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        return newCount;
+      }
+
+      toast({
+        title: "⚠️ PROCTORING WARNING",
+        description: `${reason}. Warning ${newCount}/${MAX_WARNINGS}.`,
+        variant: "destructive",
+        duration: 5000,
+      });
+      return newCount;
+    });
+  }, [handleSubmit, isTerminated, isSubmitting, toast]);
+
+  useEffect(() => {
+    if (!hasStarted || isTerminated) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) handleViolation("Tab switched or minimized");
+    };
+
+    const handleFullscreenChange = () => {
+      const inFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(inFullscreen);
+
+      if (!inFullscreen && !isTerminated) {
+        handleViolation("Exited fullscreen mode");
+      }
+    };
+
+    // Monitor Media Stream Active Status
+    const checkMediaStream = setInterval(() => {
+        if (mediaStream) {
+            const videoTrack = mediaStream.getVideoTracks()[0];
+            if (!videoTrack || videoTrack.readyState === 'ended' || !videoTrack.enabled) {
+                handleViolation("Camera disabled or blocked");
+            }
+        }
+    }, 5000);
+
+    const handleContextMenu = (e) => e.preventDefault();
+    const handleKeyDown = (e) => {
+      if (
+        (e.ctrlKey && ["c", "v", "x", "u", "a"].includes(e.key.toLowerCase())) ||
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && e.key === "I")
+      ) {
+        e.preventDefault();
+        handleViolation("Keyboard shortcut disabled");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      clearInterval(checkMediaStream);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [hasStarted, isTerminated, handleViolation, mediaStream]);
+
+  const handleReEnterFullscreen = async () => {
+    try {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+    } catch (err) {
+        console.error("Error entering fullscreen", err);
     }
   };
 
-  // ✅ Loader UI
+  const startTest = async () => {
+    // 1. Check Media first
+    const mediaGranted = await requestMediaPermissions();
+    if (!mediaGranted) return;
+
+    // 2. Then Fullscreen
+    try {
+      await document.documentElement.requestFullscreen();
+      setHasStarted(true);
+      setIsFullscreen(true);
+    } catch (err) {
+      toast({
+        title: "Fullscreen Required",
+        description: "You must enable fullscreen to take this test.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      setLoading(true);
+      try {
+        const { data: roundData, error: roundError } = await supabase
+          .from("rounds")
+          .select("round_id")
+          .eq("round_number", 1)
+          .single();
+
+        if (roundError || !roundData) throw new Error("Round 1 not found");
+        const roundId = roundData.round_id;
+
+        const { data: mcqData } = await supabase
+          .from("questions")
+          .select("question_id, question_text, mcq_options(option_text)")
+          .eq("round_id", roundId)
+          .not("mcq_options", "is", null);
+        setMcqQuestions(mcqData || []);
+
+        const { data: codingData } = await supabase
+          .from("questions")
+          .select(`
+            question_id, question_text, 
+            coding_problems (problem_statement, testcases (input_data, expected_output))
+          `)
+          .eq("round_id", roundId)
+          .not("coding_problems", "is", null);
+
+        if (codingData?.length > 0) {
+          setCodingQuestion(codingData[0]);
+        }
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        toast({ title: "Error", description: "Failed to load questions.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchQuestions();
+  }, [toast]);
+
+  const handleLanguageChange = (newLang) => {
+    setLanguage(newLang);
+    setCode(LANGUAGE_CONFIG[newLang].boilerplate);
+    toast({ title: "Language Changed", description: `Switched to ${LANGUAGE_CONFIG[newLang].label}.` });
+  };
+
+  const handleRunCode = async () => {
+    if (!codingQuestion || !code.trim()) return;
+    setIsRunning(true);
+    setTestResults([]);
+    const problem = codingQuestion.coding_problems?.[0];
+    const testCases = problem?.testcases || [];
+    const accumulatedResults = [];
+
+    try {
+      for (let i = 0; i < testCases.length; i++) {
+        const tc = testCases[i];
+        try {
+          const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
+            language: LANGUAGE_CONFIG[language].pistonRuntime,
+            version: "*",
+            files: [{ content: code }],
+            stdin: tc.input_data || "",
+          });
+          const result = response.data.run;
+          const actualOutput = result.output.trim();
+          const expectedOutput = (tc.expected_output || "").trim();
+          
+          accumulatedResults.push({
+            input: tc.input_data,
+            expected: expectedOutput,
+            actual: result.stderr || actualOutput,
+            passed: result.code === 0 && actualOutput === expectedOutput,
+            isError: result.code !== 0,
+          });
+        } catch (err) {
+          accumulatedResults.push({
+            input: tc.input_data,
+            expected: tc.expected_output,
+            actual: "Execution Error",
+            passed: false,
+            isError: true,
+          });
+        }
+        if (i < testCases.length - 1) await sleep(500);
+      }
+      setTestResults(accumulatedResults);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  // ------------------------------------------------------------
+  // 🖥️ RENDER
+  // ------------------------------------------------------------
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <Loader2 className="w-10 h-10 animate-spin text-orange-500 mb-3" />
-        <p className="text-gray-600 text-sm font-medium">
-          Loading Round 1 Questions...
-        </p>
+        <p className="text-gray-600 text-sm">Loading Round 1 Questions...</p>
       </div>
     );
   }
 
-  // ✅ Main UI
+  if (isTerminated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-red-50 p-6 text-center">
+        <ShieldAlert className="w-16 h-16 text-red-600 mb-4" />
+        <h1 className="text-3xl font-bold text-red-700 mb-2">Test Terminated</h1>
+        <p className="text-gray-700 max-w-md">
+          Your session has been ended due to multiple proctoring violations or successful submission.
+        </p>
+        <div className="mt-6 p-4 bg-white rounded shadow">
+            <p className="font-semibold">Final Warnings Count: {warnings}/{MAX_WARNINGS}</p>
+        </div>
+        <Button className="mt-8" onClick={() => window.location.reload()}>Return Home</Button>
+      </div>
+    );
+  }
+
+  if (!hasStarted) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
+        <Maximize className="w-16 h-16 text-orange-500 mb-6" />
+        <h1 className="text-3xl font-bold mb-4">Round 1: Coding & MCQ</h1>
+        
+        <div className="max-w-lg space-y-4 text-center text-gray-300 mb-8">
+          
+          <p>This test is <strong>proctored</strong>. Please read the rules carefully:</p>
+          <ul className="text-left list-disc pl-6 space-y-2 text-sm">
+            <li><strong>Camera & Microphone</strong> access is required.</li>
+            <li>Entering <strong>Fullscreen</strong> is required.</li>
+            <li>Switching tabs or minimizing the window is a <strong>violation</strong>.</li>
+            <li>Copy/Paste and Right-click are <strong>disabled</strong>.</li>
+            <li><strong>3 Violations</strong> will result in immediate disqualification.</li>
+          </ul>
+          
+          {/* Instructions for user */}
+          {!isMediaGranted && (
+            <div className="bg-orange-900/50 border border-orange-500 p-3 rounded text-sm text-orange-200 mt-4 flex items-center gap-3">
+                <Camera className="w-5 h-5" />
+                <span>You must allow camera access in the next popup.</span>
+            </div>
+          )}
+        </div>
+
+        <Button onClick={startTest} size="lg" className="bg-orange-600 hover:bg-orange-700 text-lg px-8">
+          Grant Permissions & Start Test
+        </Button>
+      </div>
+    );
+  }
+
+  if (hasStarted && !isFullscreen && !isTerminated) {
+    return (
+        <div className="fixed inset-0 z-50 bg-gray-900/95 flex flex-col items-center justify-center text-white p-6 text-center backdrop-blur-sm">
+            <Lock className="w-16 h-16 text-red-500 mb-6" />
+            <h2 className="text-3xl font-bold mb-2">Test Paused</h2>
+            <p className="text-gray-300 text-lg max-w-md mb-8">
+                You have exited fullscreen mode. This is recorded as a violation. 
+                <br/><br/>
+                You must return to fullscreen mode immediately to continue the assessment.
+            </p>
+            <Button 
+                onClick={handleReEnterFullscreen} 
+                size="lg" 
+                className="bg-red-600 hover:bg-red-700 text-white font-bold text-lg px-8 py-6"
+            >
+                <Maximize className="mr-2 h-6 w-6" />
+                Rewind to Fullscreen
+            </Button>
+        </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-6">
-      {/* Header omitted for brevity */}
+    <div className="min-h-screen bg-gray-50 py-6 px-6 select-none">
+      
+      {/* 🎥 FLOATING PROCTOR VIDEO FEED */}
+      <div className="fixed bottom-4 right-4 z-50 w-48 h-36 bg-black rounded-lg shadow-lg overflow-hidden border-2 border-orange-500">
+         
+         <video 
+            ref={videoRef} 
+            autoPlay 
+            muted 
+            playsInline
+            className="w-full h-full object-cover transform scale-x-[-1]" // Mirror effect
+         />
+         <div className="absolute top-2 left-2 flex gap-1">
+            <div className="bg-red-600 w-2 h-2 rounded-full animate-pulse"></div>
+            <span className="text-[10px] text-white font-bold bg-black/50 px-1 rounded">REC</span>
+         </div>
+         <div className="absolute bottom-2 right-2 flex gap-2 text-white/80">
+            <Camera size={14} />
+            <Mic size={14} />
+         </div>
+      </div>
+
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border">
+        <div>
+            <h1 className="text-xl font-bold text-gray-800">Round 1 Assessment</h1>
+            {warnings > 0 && (
+                <span className="text-red-600 text-xs font-bold flex items-center mt-1">
+                    <AlertTriangle className="w-3 h-3 mr-1" /> 
+                    Warnings: {warnings}/{MAX_WARNINGS}
+                </span>
+            )}
+        </div>
+        <div className="flex items-center gap-2 text-orange-600 font-mono font-bold bg-orange-50 px-3 py-1 rounded">
+            <Clock className="w-4 h-4" />
+            <span>02:45:30</span>
+        </div>
+      </div>
+
+      {/* Warning Alert */}
+      {warnings > 0 && warnings < MAX_WARNINGS && (
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm animate-pulse flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 mt-0.5" />
+            <div>
+                <p className="font-bold">Proctoring Alert</p>
+                <p className="text-sm">
+                   Please stay on this tab and keep fullscreen active. You have {MAX_WARNINGS - warnings} chances left.
+                </p>
+            </div>
+        </div>
+      )}
 
       <Tabs defaultValue="coding">
-        {" "}
-        {/* Changed default for testing */}
         <TabsList>
           <TabsTrigger value="mcq">MCQs</TabsTrigger>
           <TabsTrigger value="coding">Coding</TabsTrigger>
         </TabsList>
-        {/* MCQ Section omitted for brevity */}
-        {/* 🧩 MCQ Section */}
+
         <TabsContent value="mcq" className="space-y-6 mt-4">
-          {mcqQuestions.length === 0 ? (
-            <p className="text-gray-600 text-center">
-              No MCQ questions available.
-            </p>
-          ) : (
-            mcqQuestions.map((q, index) => (
-              <Card key={q.question_id} className="p-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  {index + 1}. {q.question_text}
-                </h3>
-
-                <RadioGroup
-                  value={selectedAnswers[q.question_id]}
-                  onValueChange={(val) =>
-                    setSelectedAnswers({
-                      ...selectedAnswers,
-
-                      [q.question_id]: val,
-                    })
-                  }
-                >
-                  {q.mcq_options.map((opt, i) => (
-                    <label
-                      key={i}
-                      className="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50"
-                    >
-                      <RadioGroupItem value={opt.option_text} />
-
-                      <span>{opt.option_text}</span>
-                    </label>
-                  ))}
-                </RadioGroup>
-              </Card>
-            ))
-          )}
+          {mcqQuestions.map((q, index) => (
+            <Card key={q.question_id} className="p-6">
+              <h3 className="text-lg font-semibold mb-4">{index + 1}. {q.question_text}</h3>
+              <RadioGroup
+                value={selectedAnswers[q.question_id]}
+                onValueChange={(val) => setSelectedAnswers({ ...selectedAnswers, [q.question_id]: val })}
+              >
+                {q.mcq_options.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 border rounded-md hover:bg-gray-50">
+                    <RadioGroupItem value={opt.option_text} id={`${q.question_id}-${i}`} />
+                    <label htmlFor={`${q.question_id}-${i}`} className="cursor-pointer w-full">{opt.option_text}</label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </Card>
+          ))}
         </TabsContent>
-        {/* 💻 Coding Section */}
+
         <TabsContent value="coding" className="space-y-6 mt-4">
-          {codingQuestion && codingQuestion.coding_problems?.length > 0 ? (
+          {codingQuestion && (
             <>
               <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-2">
-                  {codingQuestion.question_text}
-                </h3>
+                <h3 className="text-xl font-semibold mb-2">{codingQuestion.question_text}</h3>
                 <p className="text-sm text-gray-600 whitespace-pre-line bg-gray-100 p-4 rounded-md font-mono">
                   {codingQuestion.coding_problems[0].problem_statement}
                 </p>
               </Card>
 
               <Card className="p-6">
-                {/* 4. Update Editor to C language */}
-
                 <div className="flex justify-between items-center mb-3 border-b pb-3">
                   <h3 className="font-semibold text-gray-700">Code Editor</h3>
-
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500">Language:</span>
                     <select
                       value={language}
                       onChange={(e) => handleLanguageChange(e.target.value)}
-                      className="border rounded px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
+                      className="border rounded px-3 py-1.5 text-sm"
                     >
                       {Object.keys(LANGUAGE_CONFIG).map((key) => (
-                        <option key={key} value={key}>
-                          {LANGUAGE_CONFIG[key].label}
-                        </option>
+                        <option key={key} value={key}>{LANGUAGE_CONFIG[key].label}</option>
                       ))}
                     </select>
                   </div>
@@ -439,125 +568,40 @@ export default function Round1() {
 
                 <Editor
                   height="60vh"
-                  language={LANGUAGE_CONFIG[language].monacoLanguage} // "c" or "cpp"
+                  language={LANGUAGE_CONFIG[language].monacoLanguage}
                   value={code}
                   onChange={(value) => setCode(value || "")}
                   theme="vs-dark"
-                  options={{
-                    fontSize: 14,
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                  }}
+                  options={{ fontSize: 14, minimap: { enabled: false }, contextmenu: false }}
                 />
 
                 <div className="flex gap-3 mt-4">
-                  <Button
-                    onClick={handleRunCode}
-                    disabled={isRunning}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {isRunning ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Play className="mr-2 h-4 w-4" />
-                    )}
-                    {isRunning ? "Compiling & Running..." : "Run Code"}
+                  <Button onClick={handleRunCode} disabled={isRunning} className="bg-green-600 hover:bg-green-700">
+                    {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                    Run Code
                   </Button>
-
-                  <Button
-                    variant="secondary"
-                    onClick={() => setTestResults([])}
-                  >
-                    Clear Results
-                  </Button>
+                  <Button variant="secondary" onClick={() => setTestResults([])}>Clear Results</Button>
                 </div>
 
-                {/* 5. Display Detailed Results */}
                 {testResults.length > 0 && (
                   <div className="mt-4 space-y-2">
-                    <h4 className="font-semibold text-gray-700">
-                      Test Results:
-                    </h4>
                     {testResults.map((res, i) => (
-                      <div
-                        key={i}
-                        className={`p-3 border rounded-md text-sm ${
-                          res.passed
-                            ? "bg-green-50 border-green-200"
-                            : "bg-red-50 border-red-200"
-                        }`}
-                      >
-                        <div className="flex justify-between mb-1">
-                          <span className="font-semibold">
-                            Test Case #{i + 1}
-                          </span>
-                          <span
-                            className={
-                              res.passed
-                                ? "text-green-700 font-bold"
-                                : "text-red-600 font-bold"
-                            }
-                          >
-                            {res.passed ? "Passed ✅" : "Failed ❌"}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4 mt-2 font-mono text-xs">
-                          <div>
-                            <span className="block text-gray-500">
-                              Input (stdin):
-                            </span>
-                            <div className="bg-white p-1 border rounded">
-                              {res.input}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="block text-gray-500">
-                              Expected Output:
-                            </span>
-                            <div className="bg-white p-1 border rounded">
-                              {res.expected}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="block text-gray-500">
-                              Your Output:
-                            </span>
-                            <div
-                              className={`p-1 border rounded ${
-                                res.isError
-                                  ? "text-red-600 bg-red-100"
-                                  : "bg-white"
-                              }`}
-                            >
-                              {res.actual}
-                            </div>
-                          </div>
-                        </div>
+                      <div key={i} className={`p-3 border rounded-md text-sm ${res.passed ? "bg-green-50" : "bg-red-50"}`}>
+                        <div className="font-bold">{res.passed ? "Passed ✅" : "Failed ❌"}</div>
+                        <div className="text-xs font-mono mt-1">Input: {res.input} | Expected: {res.expected} | Actual: {res.actual}</div>
                       </div>
                     ))}
                   </div>
                 )}
               </Card>
             </>
-          ) : (
-            <p>No coding questions loaded</p>
           )}
         </TabsContent>
       </Tabs>
 
       <div className="flex justify-end mt-8">
-        <Button
-          onClick={handleSubmit}
-          className="bg-orange-500 text-white"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : (
-            <Send className="mr-2 h-5 w-5" />
-          )}
+        <Button onClick={() => handleSubmit()} className="bg-orange-500 text-white" disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-5 w-5" />}
           Submit Round 1
         </Button>
       </div>
