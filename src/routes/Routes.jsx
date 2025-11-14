@@ -27,6 +27,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import AdminRoute from "./AdminRoute.jsx";
 import { supabase } from "../lib/supabaseClient.js";
+import AccessCode from "@/pages/AccessPage.jsx";
 
 const AppRouter = () => {
   const [userRole, setUserRole] = useState(null);
@@ -133,6 +134,16 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/access"
+          element={
+            <ProtectedRoute>
+              <AccessCode />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/round1"
           element={
