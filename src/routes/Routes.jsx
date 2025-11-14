@@ -28,6 +28,7 @@ import { useEffect } from "react";
 import AdminRoute from "./AdminRoute.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import AccessCode from "@/pages/AccessPage.jsx";
+import PaymentPage from "@/pages/PaymentPage.jsx";
 
 const AppRouter = () => {
   const [userRole, setUserRole] = useState(null);
@@ -102,6 +103,17 @@ const AppRouter = () => {
               <AdminRoute>
                 <AdminDashboard />
               </AdminRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/payment"
+          element={
+            <ProtectedRoute>
+              {/* <AdminRoute> */}
+                <PaymentPage />
+              {/* </AdminRoute> */}
             </ProtectedRoute>
           }
         />
