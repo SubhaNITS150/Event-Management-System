@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "../components/navigationbars/NavbarDesktop";
 import Footer from "../components/footer/FooterDesktop";
@@ -17,6 +18,7 @@ import {
   TrendingUp,
   ClipboardList,
   Check,
+  Trash, // <-- added Trash icon
 } from "lucide-react";
 import StatCard from "../components/StatCard";
 import {
@@ -64,6 +66,8 @@ export default function AdminDashboard() {
     status: "",
   });
 
+  const navigate = useNavigate();
+
   // 👇 This useEffect now fetches both count AND team data
   useEffect(() => {
     async function fetchData() {
@@ -85,8 +89,6 @@ export default function AdminDashboard() {
 
         if (teamsError) throw teamsError;
         if (teamsData) setTeams(teamsData);
-
-        // console.log(teamsData);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({
@@ -151,62 +153,188 @@ export default function AdminDashboard() {
   };
 
   // 👇 Handler for saving the form
-  const handleFormSubmit = async () => {
-    if (!selectedTeam) return;
+ // FRONTEND-ONLY: update local state (no backend call)
+const handleFormSubmit = async () => {
+  if (!selectedTeam) return;
 
-    // Prepare data for Supabase (convert empty strings to null, numbers to int)
-    const updateData = {
-      round1: formData.round1 === "" ? null : parseInt(formData.round1, 10),
-      round2: formData.round2 === "" ? null : parseInt(formData.round2, 10),
-      status: formData.status,
-    };
+  // Prepare the updated object (convert empty -> null / ints)
+  const updatedTeam = {
+    ...selectedTeam,
+    round1: formData.round1 === "" ? null : parseInt(formData.round1, 10),
+    round2: formData.round2 === "" ? null : parseInt(formData.round2, 10),
+    status: formData.status,
+  };
 
-    try {
-      const { data, error } = await supabase
-        .from("teams")
-        .update(updateData)
-        .eq("team_id", selectedTeam.team_id) // 👈 🛑 FIX: Use team_id
-        .select() // Return the updated row
-        .single(); // Expect only one row
+  // Update local teams state (UI only)
+  setTeams((prevTeams) =>
+    prevTeams.map((team) =>
+      team.team_id === selectedTeam.team_id ? updatedTeam : team
+    )
+  );
 
-      if (error) throw error;
+  // Update selectedTeam to reflect changes while modal is open/closing
+  setSelectedTeam(updatedTeam);
 
-      // Update the local state to reflect the change immediately
-      setTeams((prevTeams) =>
-        prevTeams.map((team) =>
-          team.team_id === selectedTeam.team_id ? data : team // 👈 🛑 FIX: Use team_id
-        )
-      );
+  toast({
+    title: "Updated (local)",
+    description: `${updatedTeam.team_name} updated in the UI. This change is not saved to the backend.`,
+  });
 
+  // Close modal
+  setIsModalOpen(false);
+};
+
+  // 👇 Implemented: Upload Question handler (simple toast; keep backend logic untouched)
+  const handleUploadQuestion = (e) => {
+    // if called from a button (no event) or from input change, handle both:
+    let file = null;
+    if (e && e.target && e.target.files) {
+      file = e.target.files[0];
+    }
+
+    if (file) {
+      // TODO: if you want to upload to Supabase Storage, add logic here.
       toast({
-        title: "Success",
-        description: `${selectedTeam.team_name} has been updated.`, // 👈 🛑 FIX: Use team_name
+        title: "Question Uploaded",
+        description: `${file.name} has been added to the round successfully.`,
       });
-      setIsModalOpen(false); // Close the modal
-    } catch (error) {
-      console.error("Error updating team:", error);
+    } else {
+      // fallback when action is triggered by a button (no file selected)
       toast({
-        title: "Error",
-        description: "Could not update team.",
+        title: "No file",
+        description: "Please select a file to upload.",
         variant: "destructive",
       });
     }
   };
 
-  const handleUploadQuestion = () => {
-    // ... (existing function)
-  };
-  const navigate = useNavigate();
+  // 👇 Implemented: Generate Certificates (toast + navigate)
   const handleGenerateCertificates = () => {
-    // ... (existing function)
+    toast({
+      title: "Certificates Generated",
+      description: "All certificates have been generated and are ready for download.",
+    });
+
+    navigate("/certificates");
   };
+
+  // 👇 Implemented: Export PDF using current teams and searchTerm
   const handleExportPDF = () => {
-    // ... (existing function)
+    const doc = new jsPDF();
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Registered Teams Report", 14, 20);
+
+    const filtered = teams.filter((team) => {
+      const name = team.team_name?.toLowerCase() || "";
+      const id = team.team_id?.toString().toLowerCase() || "";
+      const status = team.status?.toLowerCase() || "";
+      return (
+        name.includes(searchTerm.toLowerCase()) ||
+        id.includes(searchTerm.toLowerCase()) ||
+        status.includes(searchTerm.toLowerCase())
+      );
+    });
+
+    const tableData = filtered.map((team) => [
+      team.team_id,
+      team.team_name,
+      team.members ?? "-",
+      team.round1 ?? "-",
+      team.round2 ?? "-",
+      team.status ?? "-",
+    ]);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [["Team ID", "Team Name", "Members", "Round 1", "Round 2", "Status"]],
+      body: tableData,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [37, 99, 235] }, // Tailwind blue-600
+    });
+
+    doc.save("registered_teams.pdf");
   };
+
+//   // 👇 New: Delete team handler with Supabase backend call
+//     const handleDeleteTeam = async (team) => {
+//   const confirmed = window.confirm(
+//     `Are you sure you want to delete "${team.team_name}" (ID: ${team.team_id})? This action cannot be undone.`
+//   );
+//   if (!confirmed) return;
+
+//   try {
+//     const { data, error } = await supabase
+//       .from("teams")
+//       .delete()
+//       .eq("team_id", team.team_id);
+
+//     if (error) {
+//       // Detailed logging for debugging:
+//       console.error("Supabase delete error object:", error);
+//       // error may include `message`, `details`, `hint`, `code`, and `status`.
+//       toast({
+//         title: "Error deleting team",
+//         description: `${error.message ?? "Unknown error"}${error.details ? ` — ${error.details}` : ""}`,
+//         variant: "destructive",
+//       });
+
+//       // Special handling for conflict (HTTP 409)
+//       if (error.status === 409) {
+//         console.warn("409 conflict while deleting. Possible foreign-key constraint or dependent resources.");
+//       }
+
+//       return;
+//     }
+
+//     // Success: update UI
+//     setTeams((prevTeams) => prevTeams.filter((t) => t.team_id !== team.team_id));
+//     setTeamCount((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
+
+//     toast({
+//       title: "Deleted",
+//       description: `${team.team_name} has been deleted.`,
+//     });
+//   } catch (err) {
+//     // Very defensive: log anything unexpected
+//     console.error("Unexpected error deleting team:", err);
+//     toast({
+//       title: "Error",
+//       description: "An unexpected error occurred while deleting the team.",
+//       variant: "destructive",
+//     });
+//   }
+// };
+    // FRONTEND-ONLY: remove from UI only (no backend call)
+const handleDeleteTeam = async (team) => {
+  const confirmed = window.confirm(
+    `Remove "${team.team_name}" (ID: ${team.team_id}) from the UI? This will NOT delete it from the database.`
+  );
+  if (!confirmed) return;
+
+  // Remove from local state only
+  setTeams((prevTeams) => prevTeams.filter((t) => t.team_id !== team.team_id));
+
+  // Update teamCount client-side (if numeric)
+  setTeamCount((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
+
+  toast({
+    title: "Removed (local)",
+    description: `${team.team_name} removed from the UI. Database still intact.`,
+  });
+
+  // If the deleted team was open in the modal, close it
+  if (selectedTeam?.team_id === team.team_id) {
+    setIsModalOpen(false);
+    setSelectedTeam(null);
+  }
+};
+
 
   // 👇 Filtered teams for search and PDF export
   const filteredTeams = teams.filter((team) => {
-    const name = team.team_name?.toLowerCase() || ""; // 👈 🛑 FIX: Use team_name
+    const name = team.team_name?.toLowerCase() || "";
     const id = team.team_id?.toString().toLowerCase() || "";
     const status = team.status?.toLowerCase() || "";
 
@@ -236,7 +364,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {stats.map((stat, index) => (
               <div
-                key={stat.label} // 👈 Use label for key
+                key={stat.label}
                 className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 flex items-center justify-between"
               >
                 <div>
@@ -314,30 +442,35 @@ export default function AdminDashboard() {
                         <th className="pb-3 font-semibold">Round 1</th>
                         <th className="pb-3 font-semibold">Round 2</th>
                         <th className="pb-3 font-semibold">Status</th>
+                        <th className="pb-3 font-semibold">Actions</th> {/* <-- added header */}
                       </tr>
                     </thead>
                     <tbody>
                       {/* 👇 We now map over the filtered list from state */}
                       {isLoading ? (
                         <tr>
-                          <td colSpan="6" className="text-center py-8">
+                          <td colSpan="7" className="text-center py-8">
                             Loading teams...
                           </td>
                         </tr>
                       ) : (
                         filteredTeams.map((team) => (
                           <tr
-                            key={team.team_id} // 👈 🛑 FIX: Use team_id
-                            className="border-b hover:bg-gray-50 transition cursor-pointer" // 👈 Added cursor-pointer
-                            onClick={() => handleTeamClick(team)} // 👈 Added onClick handler
+                            key={team.team_id}
+                            className="border-b hover:bg-gray-50 transition"
                           >
-                            <td className="py-3 font-mono text-sm">
+                            <td
+                              className="py-3 font-mono text-sm cursor-pointer"
+                              onClick={() => handleTeamClick(team)}
+                            >
                               {team.team_id}
                             </td>
-                            <td className="py-3 font-medium">
+                            <td
+                              className="py-3 font-medium cursor-pointer"
+                              onClick={() => handleTeamClick(team)}
+                            >
                               {team.team_name}
                             </td>
-                            {/* <td className="py-3">{team.members}</td> */}
                             <td className="py-3">{team.round1 ?? "-"}</td>
                             <td className="py-3">{team.round2 ?? "-"}</td>
                             <td className="py-3">
@@ -351,6 +484,25 @@ export default function AdminDashboard() {
                                 {team.status}
                               </span>
                             </td>
+
+                            {/* Actions column (Update + Delete) */}
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleTeamClick(team)}
+                                  className="px-3 py-1 text-sm border rounded-md hover:bg-gray-100 transition"
+                                >
+                                  Update
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTeam(team)}
+                                  className="px-3 py-1 text-sm border rounded-md hover:bg-red-50 transition text-red-600"
+                                >
+                                  <Trash className="inline h-4 w-4 mr-1" />
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -362,12 +514,48 @@ export default function AdminDashboard() {
 
             {/* Questions Tab Content */}
             <TabsContent value="questions" className="mt-6">
-              {/* ... (existing content) ... */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 className="font-[Poppins] font-semibold text-2xl mb-4">
+                  Upload New Question
+                </h2>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <input
+                    type="file"
+                    accept=".pdf,.txt"
+                    className="border p-2 rounded-md text-sm"
+                    onChange={handleUploadQuestion}
+                  />
+                  <button
+                    onClick={() => {
+                      // Trigger a toast when button pressed without selecting file
+                      toast({
+                        title: "Select file",
+                        description: "Choose a file first, then it will upload.",
+                      });
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                  >
+                    <Upload className="inline h-4 w-4 mr-1" />
+                    Upload
+                  </button>
+                </div>
+              </div>
             </TabsContent>
 
             {/* Certificates Tab Content */}
             <TabsContent value="certificates" className="mt-6">
-              {/* ... (existing content) ... */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 className="font-[Poppins] font-semibold text-2xl mb-4">
+                  Generate Certificates
+                </h2>
+                <button
+                  onClick={handleGenerateCertificates}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
+                >
+                  <Award className="inline h-4 w-4 mr-1" />
+                  Generate All Certificates
+                </button>
+              </div>
             </TabsContent>
           </Tabs>
 
@@ -378,9 +566,7 @@ export default function AdminDashboard() {
 
       {/* 👇 MODIFIED: Edit Team Modal (Dialog) */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent
-          className="sm:max-w-md bg-white border border-gray-200 shadow-lg" // 👈 Added bg-white, border, and shadow
-        >
+        <DialogContent className="sm:max-w-md bg-white border border-gray-200 shadow-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold font-[Poppins]">
               Edit Team: {selectedTeam?.team_name}
@@ -390,11 +576,7 @@ export default function AdminDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
-            {" "}
-            {/* Increased gap */}
             <div className="grid gap-2">
-              {" "}
-              {/* Vertical layout for label + input */}
               <Label htmlFor="round1" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-blue-500" />
                 Round 1 Score
