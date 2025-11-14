@@ -159,7 +159,16 @@ const AppRouter = () => {
               <Round2 />
             </ProtectedRoute>
           }
+        /> 
+           <Route
+       path="/access-code"
+             element={
+       <ProtectedRoute>
+       <AccessCode />
+       </ProtectedRoute>
+     }
         />
+        
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
