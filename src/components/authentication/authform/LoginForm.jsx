@@ -5,13 +5,16 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import FullScreenLoader from "../../Loading.jsx";
 
+
+import { useToast } from "../../../hooks/use-toast";
+
 const LoginForm = () => {
   const [userType, setUserType] = useState("participant");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false); // ✅ added
-
+   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -26,12 +29,20 @@ const LoginForm = () => {
     if (error) {
       setLoading(false); // ✅ hide loader on error
       console.error(error);
-      toast.error("Login Failed");
+       toast({
+        title: "Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     } else {
-      toast.success(`Logged in as ${data.user?.email} (${userType})`);
+      toast({
+  title: "Login Successful!",
+  description: `Welcome back, ${userType}!`,
+   }  );
       setTimeout(() => navigate("/"), 1000); // unmounts -> loader disappears
     }
   };
+
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -40,7 +51,11 @@ const LoginForm = () => {
     });
     if (error) {
       console.error(error);
-      toast.error("Google login failed");
+        toast({
+        title: "Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -51,7 +66,11 @@ const LoginForm = () => {
     });
     if (error) {
       console.error(error);
-      toast.error("GitHub login failed");
+       toast({
+        title: "Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
