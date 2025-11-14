@@ -56,9 +56,17 @@ const SignUpForm = () => {
     if (error) {
       setLoading(false); // ✅ hide loader on error
       console.error(error);
-      toast.error("Signup failed. Please try again!");
+      toast({
+        title: "Signup Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     } else {
-      toast.success("Sign up successful. Please verify your email.");
+       toast({
+        title: "Signup Successful!",
+        description: `Welcome, ${userType}! Please verify your email before logging in.`,
+       
+      });
       await init();
       setTimeout(() => navigate("/"), 1500); // ✅ loader auto disappears on navigation
     }
@@ -72,9 +80,19 @@ const SignUpForm = () => {
     });
     if (error) {
       console.error(error);
-      toast.error("Google sign-in failed");
+      // toas t.error("Google sign-in failed");
+        toast({
+        title: "Google sign-in failed",
+        description: error.message,
+        variant: "destructive",
+      });
+
     } else {
-      toast.loading("Redirecting to Google…");
+       toast({
+        title: "Signup Successful!",
+        description: `Welcome, ${userType}! Please verify your email before logging in.`,
+       
+      });
     }
   };
 
