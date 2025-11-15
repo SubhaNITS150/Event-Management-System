@@ -89,42 +89,115 @@ http://localhost:5173
 
 📁 Project Structure
 /
-Project Structure
+```text
+EVENT-MANAGEMENT-SYSTEM
+├─ dist/
+├─ node_modules/
 ├─ prisma/
-│  ├─ schema.prisma        # Prisma models
-│  ├─ seed.js              # DB seed script
-│  └─ testConn.js          # Test DB connection
-├─ public/                 # Static assets
+│  ├─ schema.prisma
+│  ├─ seed.js
+│  └─ testConn.js
+├─ public/
 ├─ src/
-│  ├─ pages/               # Pages (Login, Dashboard, Register, etc.)
-│  │  ├─ Auth/
-│  │  │  ├─ Login.jsx
-│  │  │  └─ Register.jsx
-│  │  ├─ Dashboard/
-│  │  │  └─ Dashboard.jsx
-│  │  └─ ...other-pages
-│  ├─ components/          # Reusable UI components
+│  ├─ api/
+│  ├─ assets/
+│  ├─ components/
+│  │  ├─ authentication/
+│  │  │  ├─ authform/
+│  │  │  │  ├─ Authform.jsx
+│  │  │  │  ├─ LoginForm.jsx
+│  │  │  │  └─ SignUpForm.jsx
+│  │  │  ├─ github/
+│  │  │  └─ google/
+│  │  ├─ event/
+│  │  │  └─ Events.jsx
+│  │  ├─ footer/
+│  │  │  ├─ FooterDesktop.jsx
+│  │  │  └─ FooterMobile.jsx
+│  │  ├─ homepage/
+│  │  │  └─ Hero.jsx
+│  │  ├─ navigationbars/
+│  │  │  ├─ NavbarDesktop.jsx
+│  │  │  └─ NavbarMobile.jsx
 │  │  ├─ ui/
-│  │  │  ├─ Button.jsx
-│  │  │  └─ Card.jsx
-│  │  └─ layout/
-│  │     ├─ Navbar.jsx
-│  │     └─ Footer.jsx
-│  ├─ api/                 # API helper functions / client wrappers
-│  │  ├─ events.js
-│  │  └─ teams.js
-│  ├─ lib/                 # Supabase client, utilities
+│  │  │  ├─ accordion.jsx
+│  │  │  ├─ alert.jsx
+│  │  │  ├─ badge.jsx
+│  │  │  ├─ button.jsx
+│  │  │  ├─ card.jsx
+│  │  │  ├─ dialog.jsx
+│  │  │  ├─ input.jsx
+│  │  │  ├─ label.jsx
+│  │  │  ├─ progress.jsx
+│  │  │  ├─ radio-group.jsx
+│  │  │  ├─ select.jsx
+│  │  │  ├─ tabs.jsx
+│  │  │  ├─ textarea.jsx
+│  │  │  ├─ toast.jsx
+│  │  │  └─ toaster.jsx
+│  │  ├─ components.txt
+│  │  ├─ FeatureCard.jsx
+│  │  ├─ Loading.jsx
+│  │  └─ StatCard.jsx
+│  ├─ db/
+│  ├─ hooks/
+│  │  ├─ viewport/
+│  │  └─ use-toast.js
+│  ├─ layout/
+│  ├─ lib/
+│  │  ├─ queryClient.js
 │  │  ├─ supabaseClient.js
-│  │  └─ helpers.js
-│  ├─ generated/prisma/    # Generated Prisma client (output)
+│  │  └─ utils.js
+│  ├─ pages/
+│  │  ├─ authentication/
+│  │  │  ├─ ConfirmEmail.jsx
+│  │  │  ├─ Login.jsx
+│  │  │  └─ SignUp.jsx
+│  │  ├─ event/
+│  │  │  └─ EventPage.jsx
+│  │  ├─ homepage/
+│  │  │  └─ About.jsx
+│  │  ├─ AccessPage.jsx
+│  │  ├─ AdminDashboard.jsx
+│  │  ├─ AlreadyRegistered.jsx
+│  │  ├─ Certificates.jsx
+│  │  ├─ Contact.jsx
+│  │  ├─ Gallery.jsx
+│  │  ├─ Leaderboard.jsx
+│  │  ├─ Login.jsx
+│  │  ├─ pages.txt
+│  │  ├─ ParticipantDashboard.jsx
+│  │  ├─ PaymentPage.jsx
+│  │  ├─ Register.jsx
+│  │  ├─ Round1.jsx
+│  │  ├─ Round2.jsx
+│  │  └─ Schedule.jsx
+│  ├─ routes/
+│  │  ├─ AdminRoute.jsx
+│  │  ├─ ProtectedRoutes.jsx
+│  │  ├─ RegistereGuard.jsx
+│  │  └─ Routes.jsx
+│  ├─ services/
+│  │  ├─ authservices/
+│  │  ├─ viewportservices/
+│  │  └─ services.txt
+│  ├─ utils/
+│  ├─ App.css
 │  ├─ App.jsx
-│  ├─ main.jsx
-│  └─ index.css
+│  ├─ index.css
+│  └─ main.jsx
+├─ .env
+├─ .gitignore
+├─ components.json
+├─ eslint.config.js
+├─ index.html
+├─ jsconfig.json
 ├─ package.json
-├─ vite.config.js
-└─ README.md
-
-
+├─ pnpm-lock.yaml
+├─ README.md
+├─ vercel.json
+└─ vite.config.js
+```
 
 🏗 Build & Deploy
 
