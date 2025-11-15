@@ -89,6 +89,7 @@ http://localhost:5173
 
 📁 Project Structure
 /
+/
 ├─ prisma/
 │  ├─ schema.prisma        # Prisma models
 │  ├─ seed.js              # DB seed script
@@ -106,6 +107,7 @@ http://localhost:5173
 ├─ package.json
 ├─ vite.config.js
 └─ README.md
+
 
 🏗 Build & Deploy
 
