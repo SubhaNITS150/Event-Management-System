@@ -351,11 +351,6 @@ export default function PaymentPage() {
 
 
       </div>
-
-      {/* Footer Badges */}
-      {/* <div className="fixed bottom-4 w-full text-center text-gray-400 text-xs pointer-events-none">
-        <p>Clone created for educational purposes</p>
-      </div> */}
     </div>
   );
 }
