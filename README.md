@@ -89,24 +89,41 @@ http://localhost:5173
 
 📁 Project Structure
 /
-/
+Project Structure
 ├─ prisma/
 │  ├─ schema.prisma        # Prisma models
 │  ├─ seed.js              # DB seed script
 │  └─ testConn.js          # Test DB connection
 ├─ public/                 # Static assets
 ├─ src/
-│  ├─ pages/               # Pages (Login, Dashboard, Register…)
-│  ├─ components/          # UI Components
-│  ├─ api/                 # API helper functions
+│  ├─ pages/               # Pages (Login, Dashboard, Register, etc.)
+│  │  ├─ Auth/
+│  │  │  ├─ Login.jsx
+│  │  │  └─ Register.jsx
+│  │  ├─ Dashboard/
+│  │  │  └─ Dashboard.jsx
+│  │  └─ ...other-pages
+│  ├─ components/          # Reusable UI components
+│  │  ├─ ui/
+│  │  │  ├─ Button.jsx
+│  │  │  └─ Card.jsx
+│  │  └─ layout/
+│  │     ├─ Navbar.jsx
+│  │     └─ Footer.jsx
+│  ├─ api/                 # API helper functions / client wrappers
+│  │  ├─ events.js
+│  │  └─ teams.js
 │  ├─ lib/                 # Supabase client, utilities
-│  ├─ generated/prisma/    # Generated Prisma client
+│  │  ├─ supabaseClient.js
+│  │  └─ helpers.js
+│  ├─ generated/prisma/    # Generated Prisma client (output)
 │  ├─ App.jsx
 │  ├─ main.jsx
-│  └─ ...others
+│  └─ index.css
 ├─ package.json
 ├─ vite.config.js
 └─ README.md
+
 
 
 🏗 Build & Deploy
