@@ -39,14 +39,13 @@ This project includes a production-ready frontend, Prisma database schema, seedi
 
 ---
 
-## 📦 Project Setup
-
-### 1️⃣ Clone the repository
-
-```bash
-git clone https://github.com/SubhaNITS150/Event-Management-System.git
-cd Event-Management-System
+2️⃣ Install dependencies
 npm install
+
+
+3️⃣ Create .env file (required)
+
+Create a file named .env in the root and fill values:
 # Prisma / DB
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB_NAME?schema=public"
 
@@ -61,6 +60,32 @@ VITE_APP_EMAILJS_PUBLIC_KEY="public_xxx"
 
 # App base URL
 VITE_APP_BASE_URL="http://localhost:5173"
+
+
+🗄 Prisma (Database)
+Generate Prisma Client
+npx prisma generate
+
+Run DB Migrations
+npx prisma migrate dev --name init
+
+Seed the Database
+node prisma/seed.js
+
+Test DB Connection
+node prisma/testConn.js
+
+🧪 Development Server
+
+Start the project:
+
+npm run dev
+
+
+Vite default URL:
+
+http://localhost:5173
+
 
 📁 Project Structure
 /
@@ -82,6 +107,63 @@ VITE_APP_BASE_URL="http://localhost:5173"
 ├─ vite.config.js
 └─ README.md
 
+🏗 Build & Deploy
+
+Build production bundle:
+
+npm run build
+
+
+The production build will be created in dist/.
+
+Suitable Deployment Platforms
+Layer	Recommended
+Frontend	Vercel / Netlify / Cloudflare Pages
+Database	Supabase / Neon / Railway / Render
+Server-side Prisma functions	Vercel Serverless / Node server / Supabase Edge Functions
 
 
 
+❗ Common Issues & Fixes
+📌 Prisma ESM Error
+
+If you see:
+
+Cannot use import statement outside a module
+
+
+Make sure:
+
+Node ≥ 18
+
+"type": "module" exists in package.json
+
+You ran npx prisma generate
+
+📌 Supabase Auth Fails
+
+Check:
+
+VITE_SUPABASE_URL
+
+VITE_SUPABASE_ANON_KEY
+
+📌 EmailJS Not Sending
+
+Ensure:
+
+Correct service ID, template ID, public key
+
+EmailJS template includes required fields
+
+🤝 Contributing
+
+Fork the repository
+
+Create a feature branch
+
+Commit your updates
+
+Submit a pull request
+
+Please maintain clean commits and consistent code style.
