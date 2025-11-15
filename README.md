@@ -62,7 +62,7 @@ VITE_APP_EMAILJS_PUBLIC_KEY="public_xxx"
 # App base URL
 VITE_APP_BASE_URL="http://localhost:5173"
 
-
+📁 Project Structure
 /
 ├─ prisma/
 │  ├─ schema.prisma        # Prisma models
