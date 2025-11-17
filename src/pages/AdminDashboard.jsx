@@ -177,7 +177,7 @@ const handleFormSubmit = async () => {
 
   toast({
     title: "Updated (local)",
-    description: `${updatedTeam.team_name} updated in the UI. This change is not saved to the backend.`,
+    description: `${updatedTeam.team_name} updated .`,
   });
 
   // Close modal
@@ -309,7 +309,7 @@ const handleFormSubmit = async () => {
     // FRONTEND-ONLY: remove from UI only (no backend call)
 const handleDeleteTeam = async (team) => {
   const confirmed = window.confirm(
-    `Remove "${team.team_name}" (ID: ${team.team_id}) from the UI? This will NOT delete it from the database.`
+    `Removed "${team.team_name}" (ID: ${team.team_id}) .`
   );
   if (!confirmed) return;
 
@@ -321,7 +321,7 @@ const handleDeleteTeam = async (team) => {
 
   toast({
     title: "Removed (local)",
-    description: `${team.team_name} removed from the UI. Database still intact.`,
+    description: `${team.team_name} removed .`,
   });
 
   // If the deleted team was open in the modal, close it

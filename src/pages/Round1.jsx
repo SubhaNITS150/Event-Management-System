@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Send, Loader2, Play, AlertTriangle, ShieldAlert, Maximize, Lock, Camera, Mic } from "lucide-react";
 import { Editor } from "@monaco-editor/react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const LANGUAGE_CONFIG = {
   c: {
@@ -28,6 +29,7 @@ const MAX_WARNINGS = 3;
 
 export default function Round1() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Standard State
   const [loading, setLoading] = useState(true);
@@ -105,6 +107,7 @@ export default function Round1() {
     }
 
     if (autoSubmitReason) {
+      setIsTerminated(true);
       toast({
         title: "Test Terminated",
         description: `Auto-submitting due to: ${autoSubmitReason}`,
@@ -112,6 +115,7 @@ export default function Round1() {
       });
     } else {
       toast({ title: "Submitting...", description: "Recording your answers." });
+      navigate("/submission-success")
     }
 
     try {
@@ -162,18 +166,18 @@ export default function Round1() {
 
     } catch (error) {
       console.error("Submit Error:", error);
-      toast({
-        title: "Submission Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      // toast({
+      //   title: "Submission Failed",
+      //   description: error.message,
+      //   variant: "destructive",
+      // });
     } finally {
       setIsSubmitting(false);
       if (!autoSubmitReason && document.fullscreenElement) {
         document.exitFullscreen().catch(console.error);
       }
     }
-  }, [code, codingQuestion, selectedAnswers, toast, mediaStream]);
+  }, [code, codingQuestion, selectedAnswers, toast, mediaStream, navigate]);
 
   // ------------------------------------------------------------
   // 🛡️ PROCTORING LOGIC

@@ -5,16 +5,19 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Plus, Trash2, IndianRupee } from "lucide-react";
+import { Plus, Trash2, IndianRupee, Loader2 } from "lucide-react"; // Import Loader2
 import { useToast } from "../hooks/use-toast";
 import { supabase } from "../lib/supabaseClient";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 export default function Register() {
   const { toast } = useToast();
+  const navigate = useNavigate(); // Instantiate navigate
   const [teamName, setTeamName] = useState("");
   const [members, setMembers] = useState([
     { id: 1, name: "", email: "", college: "", phone: "", aadhar: "" },
   ]);
+  const [isLoading, setIsLoading] = useState(false); // Add isLoading state
 
   const addMember = () => {
     if (members.length < 3) {
@@ -46,6 +49,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true); // Set loading true
 
     try {
       // ✅ 1. Get current logged-in user (leader)
@@ -54,7 +58,7 @@ export default function Register() {
       } = await supabase.auth.getUser();
       if (!user) {
         toast({ title: "Please sign in first", variant: "destructive" });
-        setLoading(false);
+        setIsLoading(false); // Set loading false
         return;
       }
 
@@ -72,7 +76,7 @@ export default function Register() {
           description: "Please choose a different name.",
           variant: "destructive",
         });
-        setLoading(false);
+        setIsLoading(false); // Set loading false
         return;
       }
 
@@ -123,16 +127,13 @@ export default function Register() {
       if (teamMembersErr) throw teamMembersErr;
 
       // ✅ 6. Success toast
-      toast({
-        title: "Team Registered Successfully!",
-        description: "Your team has been registered. Proceed to payment.",
-      });
+      // toast({
+      //   title: "Team Registered Successfully!",
+      //   description: "Your team has been registered. Proceeding to payment.",
+      // });
 
-      // Reset form
-      setTeamName("");
-      setMembers([
-        { id: 1, name: "", email: "", college: "", phone: "", aadhar: "" },
-      ]);
+      // ✅ 7. Navigate to payment page
+      navigate("/payment");
     } catch (error) {
       console.error("Registration error:", error);
       toast({
@@ -140,13 +141,15 @@ export default function Register() {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+      setIsLoading(false); // Set loading false on error
     }
+    // We don't set loading to false in the 'finally' block
+    // because navigation will unmount the component anyway.
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* <Navbar /> */}
       <main className="flex-1 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -333,13 +336,18 @@ export default function Register() {
               type="submit"
               size="lg"
               className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg rounded-xl shadow-md"
-              onClick={handleSubmit}
+              // onClick={() => navigate("/payment")}
+              disabled={isLoading}
             >
-              Proceed to Payment
+              {isLoading ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : null}
+              {isLoading ? "Processing..." : "Proceed to Payment"}
             </Button>
           </form>
         </div>
       </main>
+      {/* <Footer /> */}
     </div>
   );
 }
