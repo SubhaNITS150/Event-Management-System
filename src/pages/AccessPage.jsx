@@ -196,7 +196,7 @@ export default function AccessCode({ onAccessGranted, targetRoute }) {
     try {
       // use an absolute URL for quick testing
       const resp = await fetch(
-        "https://server-hackathon-2wvr.onrender.com/api/send-otp",
+        "https://server-hackathon-qy9t.onrender.com/api/send-otp",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
