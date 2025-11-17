@@ -1,4 +1,3 @@
-
 // import { useState } from "react";
 // import { useToast } from "@/hooks/use-toast";
 // import { Button } from "@/components/ui/button";
@@ -140,7 +139,6 @@
 //   );
 // }
 
-
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -197,13 +195,14 @@ export default function AccessCode({ onAccessGranted, targetRoute }) {
 
     try {
       // use an absolute URL for quick testing
-const resp = await fetch("http://localhost:4000/api/send-otp", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email, otp }),
-});
-
-      
+      const resp = await fetch(
+        "https://server-hackathon-2wvr.onrender.com/api/send-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp }),
+        }
+      );
 
       const json = await resp.json();
 
@@ -296,7 +295,9 @@ const resp = await fetch("http://localhost:4000/api/send-otp", {
 
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Online Assessment</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            Online Assessment
+          </CardTitle>
           <CardDescription className="text-center">
             You are about to start Round 1.
           </CardDescription>
@@ -304,7 +305,6 @@ const resp = await fetch("http://localhost:4000/api/send-otp", {
 
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-
             {/* EMAIL INPUT */}
             <div className="space-y-2">
               <Label className="font-semibold">Email</Label>
