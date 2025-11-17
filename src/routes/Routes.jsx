@@ -29,6 +29,7 @@ import AdminRoute from "./AdminRoute.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import AccessCode from "@/pages/AccessPage.jsx";
 import PaymentPage from "@/pages/PaymentPage.jsx";
+import SubmissionSuccess from "@/pages/SubmitSuccess.jsx";
 
 const AppRouter = () => {
   const [userRole, setUserRole] = useState(null);
@@ -164,6 +165,16 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/submission-success"
+          element={
+            <ProtectedRoute>
+              <SubmissionSuccess />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/round2"
           element={
