@@ -148,8 +148,8 @@ export default function PaymentPage() {
                    <span className="text-slate-800 font-bold text-xl">A</span>
                 </div>
                 <div>
-                  <h2 className="font-bold text-lg">Acme Corp</h2>
-                  <p className="text-xs text-gray-400">Test Transaction</p>
+                  <h2 className="font-bold text-lg">HireEventPro</h2>
+                  <p className="text-xs text-gray-400">Transaction Page</p>
                 </div>
               </div>
               <div className="space-y-4 mt-8">
