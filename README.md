@@ -19,8 +19,6 @@ This project includes a production-ready frontend, Prisma database schema, seedi
 - ⚙️ **Admin/helper components**
 - 🔔 **Toast notifications** (react-hot-toast)
 - 🧭 **Routing** via React Router
-- 🧠 **Zustand** for state management
-- 🧹 **Type-safe validation with Zod**
 
 ---
 
