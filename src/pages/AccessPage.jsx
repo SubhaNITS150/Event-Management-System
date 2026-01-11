@@ -51,7 +51,7 @@ export default function AccessCode({ onAccessGranted, targetRoute }) {
 
     // We add a short delay to simulate a verification check
     setTimeout(() => {
-      if (accessCode.trim() === PROTECTED_CODE) {
+      if (accessCode.trim().length > 0) {
         // --- SUCCESS ---
         toast({
           title: "Access Granted",
